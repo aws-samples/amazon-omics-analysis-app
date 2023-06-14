@@ -12,6 +12,7 @@ export interface DynamoDbProps {
 export class DynamoDb extends Construct {
   /** 可視化の結果を保存するための DynamoDB テーブル */
   readonly visualizationsTable: dynamodb.Table;
+  readonly dashboardsTable: dynamodb.Table;
 
   /**
    * {@link DynamoDb} コンストラクトを作成する
@@ -36,6 +37,20 @@ export class DynamoDb extends Construct {
         type: dynamodb.AttributeType.STRING,
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY, // CloudFormation スタック削除時に自動削除されるように設定 (実運用ではお勧めしません)
+    });
+
+    // ワークフロー実行結果の可視化結果を管理する Dashboards テーブルを作成する
+    this.dashboardsTable = new dynamodb.Table(this, 'DashboardsTable', {
+      tableName: `${stageName ?? ''}OmicsDashboards`,
+      partitionKey: {
+        name: 'runId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'visualizationId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
   }
 }

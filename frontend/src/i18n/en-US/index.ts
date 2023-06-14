@@ -31,9 +31,6 @@ export default {
     analsysList: 'Analysis List',
     newAnalysis: 'New Analysis',
   },
-  dashborad: {
-    title: 'Dashborad',
-  },
   workflow: {
     type: {
       ready2run: 'Ready2Run',
@@ -158,6 +155,11 @@ export default {
           startTime: analysisItem.startTime,
           stopTime: analysisItem.stopTime,
         },
+      },
+      dashboard: {
+        title: 'Dashboard',
+        notFoundError: 'Dashboard not generated.',
+        otherError: 'An error occurred while embedding the dashboard.',
       },
       outputs: {
         title: 'Outputs',

@@ -6,6 +6,7 @@ import {
   WorkflowType,
   Workflow,
   Visualization,
+  Dashboard,
 } from 'src/@types/analysis';
 import { api, apiWithoutErrorHandling } from 'src/boot/axios';
 
@@ -74,6 +75,11 @@ export type GetWorkflowsResponse = {
 
 export type GetVisualizationsResponse = {
   items: Visualization[];
+  nextToken?: string;
+};
+
+export type GetDashboardsResponse = {
+  items: Dashboard[];
   nextToken?: string;
 };
 
@@ -256,6 +262,32 @@ const useAnalysis = () => {
      */
     getVisualization: async (workflowType: WorkflowType, workflowId: string, visualizationId: string) => {
       const response = await api.get<Visualization>(`/workflows/${workflowType}/${workflowId}/visualizations/${visualizationId}`);
+      return response.data;
+    },
+
+    /**
+     * 指定された実行のダッシュボード一覧の取得
+     * @param runId 実行 ID
+     * @param startingToken ページング処理用トークン
+     * @returns ダッシュボード一覧
+     */
+    getDashboards: async (runId: string, startingToken?: string) => {
+      const response = await api.get<GetDashboardsResponse>(`/runs/${runId}/visualizations`, {
+        params: {
+          ...(startingToken && { startingToken: startingToken }),
+        },
+      });
+      return response.data;
+    },
+
+    /**
+     * 指定されたダッシュボードの埋め込み用 URL の取得
+     * @param runId 実行 ID
+     * @param visualizationId 可視化 ID
+     * @returns ダッシュボード埋め込み用 URL
+     */
+    getDashboardUrl: async (runId: string, visualizationId: string) => {
+      const response = await api.get<string>(`/runs/${runId}/visualizations/${visualizationId}/dashboard`);
       return response.data;
     },
   };

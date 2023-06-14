@@ -99,3 +99,9 @@ export type Visualization = {
   name: string;
   stateMachineArn: string;
 };
+
+export type Dashboard = {
+  runId: string;
+  visualizationId: string;
+  dashboardId: string;
+};

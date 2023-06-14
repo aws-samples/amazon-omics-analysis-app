@@ -16,6 +16,11 @@ import { Waf } from './constructs/waf';
 
 /** {@link BackendStack} のパラメーター */
 export interface BackendStackProps extends cdk.StackProps {
+  /** QuickSight のサインアップを行ったリージョン */
+  quickSightIdentityRegion?: string;
+  /** QuickSight ユーザーの名前空間 */
+  quickSightUserNamespace?: string;
+
   /** バックエンド API への接続を許可する IP アドレスの CIDR */
   ipv4Ranges: string[] | undefined;
   ipv6Ranges: string[] | undefined;
@@ -94,6 +99,10 @@ export class BackendStack extends cdk.Stack {
     // DynamoDB の Visualizations テーブルの名前を CloudFormation スタックの出力に追加
     new cdk.CfnOutput(this, "DynamoDbVisualizationsTableName", {
       value: this.dynamoDb.visualizationsTable.tableName,
+    });
+    // DynamoDB の Dashboards テーブルの名前を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, "DynamoDbDashboardsTableName", {
+      value: this.dynamoDb.dashboardsTable.tableName,
     });
 
     const stageName = cdk.Stage.of(this)?.stageName;
@@ -178,6 +187,21 @@ export class BackendStack extends cdk.Stack {
       value: this.apiGateway.restApi.url,
     });
 
+    const cognitoOidcProvider = new iam.OpenIdConnectProvider(this, 'CognitoOidcProvider', {
+      url: this.cognito.userPool.userPoolProviderUrl,
+      clientIds: [this.cognito.userPoolClient.userPoolClientId],
+    });
+    const quickSightFederationRole = new iam.Role(this, 'QuickSightFederationRole', {
+      roleName: `${stageName ?? ''}QuickSightFederationRole`,
+      assumedBy: new iam.OpenIdConnectPrincipal(cognitoOidcProvider, {
+        StringEquals: new cdk.CfnJson(this, 'QuickSightFederationRoleCondition', {
+          value: {
+            [`${this.cognito.userPool.userPoolProviderName}:aud`]: this.cognito.userPoolClient.userPoolClientId,
+          },
+        }),
+      }),
+    });
+
     // API Gateway に REST API の定義を追加
     this.apiGateway.addWorkflowsApi(this.commonLayer);
     this.apiGateway.addWorkflowVisualizationsApi(this.dynamoDb, this.commonLayer);
@@ -187,6 +211,10 @@ export class BackendStack extends cdk.Stack {
     this.apiGateway.addTaskLogApi(this.commonLayer);
     this.apiGateway.addRunOutputsApi(this.commonLayer);
     this.apiGateway.addDeleteRunApi(this.commonLayer);
+    this.apiGateway.addRunVisualizationsApi(this.dynamoDb, this.commonLayer);
+    if (props.quickSightIdentityRegion && props.quickSightUserNamespace) {
+      this.apiGateway.addVisualizationDashboardApi(props.quickSightIdentityRegion, props.quickSightUserNamespace, quickSightFederationRole, this.dynamoDb, this.commonLayer);
+    }
 
     // バックエンド API へのアクセスを制限する Web ACL を作成
     if (props.ipv4Ranges || props.ipv6Ranges) {

@@ -17,6 +17,7 @@
     "@aws-amplify/ui-vue": "^3.1.9",
     "@quasar/extras": "^1.0.0",
     "@vueuse/core": "^9.13.0",
+    "amazon-quicksight-embedding-sdk": "^2.0.0",
     "aws-amplify": "^5.0.18",
     "axios": "^1.2.1",
     "dayjs": "^1.11.7",

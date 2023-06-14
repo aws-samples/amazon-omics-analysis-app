@@ -416,4 +416,95 @@ export class ApiGateway extends Construct {
     const run = this.restApi.root.getResource('runs')!.getResource('{runId}')!;
     run.addMethod('DELETE', new apigw.LambdaIntegration(deleteRunApiFunction));
   }
+
+  /**
+   * ワークフロー実行の可視化に関する情報を取得する API を作成する
+   * `GET /runs/{runId}/visualizations`
+   * `GET /runs/{runId}/visualizations/{visualizationId}`
+   * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
+   * @param layer Lambda 関数が利用する Lambda レイヤー
+   */
+  addRunVisualizationsApi(dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+    // API を実装した Lambda 関数を作成する
+    const runVisualizationsApiFunction = new lambdaPython.PythonFunction(this, 'RunVisualizationsApiFunction', {
+      entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunVisualizationsApi'),
+      runtime: lambda.Runtime.PYTHON_3_9,
+      architecture: lambda.Architecture.X86_64,
+
+      // memorySize: 1024,
+      // ephemeralStorageSize: cdk.Size.gibibytes(1),
+
+      environment: {
+        DYNAMODB_TABLE_NAME_DASHBOARDS: dynamoDb.dashboardsTable.tableName,
+      },
+
+      layers: [layer],
+
+      timeout: cdk.Duration.seconds(30),
+      tracing: lambda.Tracing.ACTIVE
+    });
+    dynamoDb.dashboardsTable.grantReadData(runVisualizationsApiFunction);
+
+    // API Gateway にルートを登録する
+    const run = this.restApi.root.getResource('runs')!.getResource('{runId}')!;
+    const visualizations = run.addResource('visualizations');
+    visualizations.addMethod('GET', new apigw.LambdaIntegration(runVisualizationsApiFunction));
+
+    const visualization = visualizations.addResource('{visualizationId}');
+    visualization.addMethod('GET', new apigw.LambdaIntegration(runVisualizationsApiFunction));
+  }
+
+  /**
+   * ワークフローの出力を可視化するダッシュボードの URL を取得する API を作成する
+   * `POST /runs/{runId}/visualizations/{visualizationId}/dashboard`
+   * @param quickSightIdentityRegion QuickSight のサインアップを行ったリージョン
+   * @param quickSightUserNamespace QuickSight ユーザーの名前空間
+   * @param quickSightFederationRole Cognito のユーザー ID で QuickSight にアクセスできるようにするための IAM ロール
+   * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
+   * @param layer Lambda 関数が利用する Lambda レイヤー
+   */
+  addVisualizationDashboardApi(quickSightIdentityRegion: string, quickSightUserNamespace: string, quickSightFederationRole: iam.IRole, dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+    // API を実装した Lambda 関数を作成する
+    const visualizationDashboardApiFunction = new lambdaPython.PythonFunction(this, 'VisualizationDashboardApiFunction', {
+      entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/VisualizationDashboardApi'),
+      runtime: lambda.Runtime.PYTHON_3_9,
+      architecture: lambda.Architecture.X86_64,
+
+      // memorySize: 1024,
+      // ephemeralStorageSize: cdk.Size.gibibytes(1),
+
+      environment: {
+        QUICKSIGHT_IDENTITY_REGION: quickSightIdentityRegion,
+        QUICKSIGHT_USER_NAMESPACE: quickSightUserNamespace,
+        QUICKSIGHT_FEDERATION_ROLE_NAME: quickSightFederationRole.roleName,
+        DYNAMODB_TABLE_NAME_DASHBOARDS: dynamoDb.dashboardsTable.tableName,
+      },
+
+      layers: [layer],
+
+      timeout: cdk.Duration.seconds(30),
+      tracing: lambda.Tracing.ACTIVE
+    });
+    visualizationDashboardApiFunction.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'quicksight:GenerateEmbedUrlForRegisteredUser',
+      ],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'quicksight',
+          region: quickSightIdentityRegion,
+          resource: 'user',
+          resourceName: `${quickSightUserNamespace}/${quickSightFederationRole.roleName}/*`,
+        }),
+      ],
+    }));
+    dynamoDb.dashboardsTable.grantReadData(visualizationDashboardApiFunction);
+
+    // API Gateway にルートを登録する
+    const run = this.restApi.root.getResource('runs')!.getResource('{runId}')!;
+    const visualizations = run.getResource('visualizations')!.getResource('{visualizationId}')!;
+    const dashboard = visualizations.addResource('dashboard');
+    dashboard.addMethod('GET', new apigw.LambdaIntegration(visualizationDashboardApiFunction));
+  }
 }

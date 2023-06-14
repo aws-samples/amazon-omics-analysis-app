@@ -10,6 +10,7 @@ import {
   Analysis,
   ParameterValue,
   Workflow,
+  Dashboard,
 } from 'src/@types/analysis';
 import FormSettings from '../components/analysis/FormSettings.vue';
 import useAnalysis, { GetTasksResponse } from 'src/services/useAnalysis';
@@ -19,6 +20,7 @@ import { useI18n } from 'vue-i18n';
 import DisplayBasicInfo from 'src/components/analysis/DisplayBasicInfo.vue';
 import TaskTimelineChart from 'src/components/analysis/TaskTimelineChart.vue';
 import TableTask from 'src/components/analysis/TableTask.vue';
+import DashboardAnalysis from 'src/components/analysis/DashboardAnalysis.vue';
 
 import TreeOutputs from 'src/components/analysis/TreeOutputs.vue';
 import CardInfomation from 'src/components/common/CardInfomation.vue';
@@ -50,6 +52,7 @@ const id = _.isArray(route.params['id'])
 
 const resAnalysis = ref<Analysis>();
 const workflow = ref<Workflow | undefined>();
+const allDashboards = ref<Dashboard[]>();
 
 const searchRun = async () => {
   try {
@@ -57,6 +60,18 @@ const searchRun = async () => {
     $q.loading.show();
     resAnalysis.value = await analysis.getRun(id);
     workflow.value = await analysis.getWorkflow(resAnalysis.value.workflowType, resAnalysis.value.workflowId);
+
+    let startingToken: string | undefined = undefined;
+    allDashboards.value = [];
+    do {
+      const dashboards = await analysis.getDashboards(id);
+      if (dashboards.items) {
+        allDashboards.value.push(...dashboards.items);
+        startingToken = dashboards.nextToken;
+      } else {
+        break;
+      }
+    } while(startingToken);
   } finally {
     $q.loading.hide();
   }
@@ -170,6 +185,15 @@ const onClickReRun = () => {
           :on-refresh="searchRun"
         >
           <display-basic-info :value="resAnalysis" :readonly="true" />
+        </card-infomation>
+
+        <!-- ダッシュボード -->
+        <card-infomation v-for="dashboard in allDashboards"
+          class="col-12"
+          :key="dashboard.dashboardId"
+          :title="$t('analysis.result.dashboard.title')"
+        >
+          <dashboard-analysis :run-id="dashboard.runId" :visualization-id="dashboard.visualizationId"/>
         </card-infomation>
 
         <!-- Output一覧 -->

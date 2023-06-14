@@ -10,6 +10,12 @@ const app = new cdk.App();
 // cdk.json から各種設定を読み込む
 const stageName: string | undefined = app.node.tryGetContext('stage');
 
+/** QuickSight のサインアップを行ったリージョン */
+const quickSightIdentityRegion: string | undefined = app.node.tryGetContext('quickSightIdentityRegion') ?? 'us-east-1';
+
+/** QuickSight ユーザーの名前空間 */
+const quickSightUserNamespace: string | undefined = app.node.tryGetContext('quickSightUserNamespace') ?? 'default';
+
 // プロトタイプへの接続を許可するアクセス元 IP アドレスの CIDR 一覧
 const ipv4Ranges: string[] | undefined = app.node.tryGetContext("allowdIPv4AddressRanges");
 const ipv6Ranges: string[] | undefined = app.node.tryGetContext("allowdIPv6AddressRanges");
@@ -18,6 +24,9 @@ const scope: cdk.Stage | cdk.App = stageName ? new cdk.Stage(app, stageName) : a
 
 // バックエンドを作成する
 const backendStack = new BackendStack(scope, 'OmicsBackendStack', {
+  quickSightIdentityRegion: quickSightIdentityRegion,
+  quickSightUserNamespace: quickSightUserNamespace,
+
   ipv4Ranges: ipv4Ranges,
   ipv6Ranges: ipv6Ranges,
 

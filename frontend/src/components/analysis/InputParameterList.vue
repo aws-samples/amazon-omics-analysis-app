@@ -91,7 +91,9 @@ const categoriesList = computed(() => {
     prevCateogry = cateogry.category;
     temp.push(cateogry);
   });
-  ret.push([...temp]);
+  if (temp.length > 0 ) {
+    ret.push([...temp]);
+  }
 
   return ret;
 });

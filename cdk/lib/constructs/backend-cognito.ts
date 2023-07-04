@@ -30,7 +30,7 @@ export class Cognito extends Construct {
     // Cognito ユーザープールを作成
     this.userPool = new cognito.UserPool(this, "UserPool", {
       userPoolName: `${stageName ?? ''}OmicsUserPool`,
-      selfSignUpEnabled: false, // ユーザー自身によるサインアップを無効化
+      selfSignUpEnabled: true, // ユーザー自身によるサインアップを有効化
       standardAttributes: {
         email: {
           required: true, // メールアドレスを必須プロパティに設定

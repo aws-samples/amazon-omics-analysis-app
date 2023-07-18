@@ -18,7 +18,7 @@
     "@quasar/extras": "^1.0.0",
     "@vueuse/core": "^9.13.0",
     "amazon-quicksight-embedding-sdk": "^2.0.0",
-    "aws-amplify": "^5.0.18",
+    "aws-amplify": "^5.3.4",
     "axios": "^1.2.1",
     "dayjs": "^1.11.7",
     "echarts": "^5.4.1",

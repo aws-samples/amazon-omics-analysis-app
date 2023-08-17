@@ -45,8 +45,21 @@ export class BackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: BackendStackProps) {
     super(scope, id, props);
 
+    // Lambda 関数が共通で利用するライブラリをまとめた Lambda レイヤーを作成する
+    this.commonLayer = new lambdaPython.PythonLayerVersion(this, 'CommonLayer', {
+      // 依存ライブラリを定義した requirements.txt が存在する相対パスを指定
+      entry: path.resolve(__dirname, '../../backend/lambda/layers/Common'),
+      // 対応するランタイムとして Python 3.9 を指定
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+      // 対応するアーキテクチャとして x64_64 を指定
+      compatibleArchitectures: [lambda.Architecture.X86_64]
+    });
+
     // Cognito ユーザープールと関連リソースを作成
     this.cognito = new Cognito(this, 'Cognito', {
+      quickSightIdentityRegion: props.quickSightIdentityRegion,
+      quickSightUserNamespace: props.quickSightUserNamespace,
+      commonLayer: this.commonLayer,
     });
 
     // Cognito ユーザープールのリージョンを CloudFormation スタックの出力に追加
@@ -81,16 +94,6 @@ export class BackendStack extends cdk.Stack {
 
       // バケットへのアクセスに SSL を必須にする
       enforceSSL: true,
-    });
-
-    // Lambda 関数が共通で利用するライブラリをまとめた Lambda レイヤーを作成する
-    this.commonLayer = new lambdaPython.PythonLayerVersion(this, 'CommonLayer', {
-      // 依存ライブラリを定義した requirements.txt が存在する相対パスを指定
-      entry: path.resolve(__dirname, '../../backend/lambda/layers/Common'),
-      // 対応するランタイムとして Python 3.9 を指定
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
-      // 対応するアーキテクチャとして x64_64 を指定
-      compatibleArchitectures: [lambda.Architecture.X86_64]
     });
 
     // Step Functions による追加処理の結果を保存する DynamoDB テーブルを作成する
@@ -187,21 +190,6 @@ export class BackendStack extends cdk.Stack {
       value: this.apiGateway.restApi.url,
     });
 
-    const cognitoOidcProvider = new iam.OpenIdConnectProvider(this, 'CognitoOidcProvider', {
-      url: this.cognito.userPool.userPoolProviderUrl,
-      clientIds: [this.cognito.userPoolClient.userPoolClientId],
-    });
-    const quickSightFederationRole = new iam.Role(this, 'QuickSightFederationRole', {
-      roleName: `${stageName ?? ''}QuickSightFederationRole`,
-      assumedBy: new iam.OpenIdConnectPrincipal(cognitoOidcProvider, {
-        StringEquals: new cdk.CfnJson(this, 'QuickSightFederationRoleCondition', {
-          value: {
-            [`${this.cognito.userPool.userPoolProviderName}:aud`]: this.cognito.userPoolClient.userPoolClientId,
-          },
-        }),
-      }),
-    });
-
     // API Gateway に REST API の定義を追加
     this.apiGateway.addWorkflowsApi(this.commonLayer);
     this.apiGateway.addWorkflowVisualizationsApi(this.dynamoDb, this.commonLayer);
@@ -213,7 +201,7 @@ export class BackendStack extends cdk.Stack {
     this.apiGateway.addDeleteRunApi(this.commonLayer);
     this.apiGateway.addRunVisualizationsApi(this.dynamoDb, this.commonLayer);
     if (props.quickSightIdentityRegion && props.quickSightUserNamespace) {
-      this.apiGateway.addVisualizationDashboardApi(props.quickSightIdentityRegion, props.quickSightUserNamespace, quickSightFederationRole, this.dynamoDb, this.commonLayer);
+      this.apiGateway.addVisualizationDashboardApi(props.quickSightIdentityRegion, props.quickSightUserNamespace, this.cognito, this.dynamoDb, this.commonLayer);
     }
 
     // バックエンド API へのアクセスを制限する Web ACL を作成

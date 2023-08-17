@@ -10,6 +10,7 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 
 import * as path from 'path';
 
+import { Cognito } from "./backend-cognito";
 import { DynamoDb } from "./backend-dynamodb";
 import { WorkflowRunner } from "./backend-workflow-runner";
 
@@ -459,11 +460,11 @@ export class ApiGateway extends Construct {
    * `POST /runs/{runId}/visualizations/{visualizationId}/dashboard`
    * @param quickSightIdentityRegion QuickSight のサインアップを行ったリージョン
    * @param quickSightUserNamespace QuickSight ユーザーの名前空間
-   * @param quickSightFederationRole Cognito のユーザー ID で QuickSight にアクセスできるようにするための IAM ロール
+   * @param cognito Cognito ユーザープールを構築する CDK コンストラクト
    * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
    * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addVisualizationDashboardApi(quickSightIdentityRegion: string, quickSightUserNamespace: string, quickSightFederationRole: iam.IRole, dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+  addVisualizationDashboardApi(quickSightIdentityRegion: string, quickSightUserNamespace: string, cognito: Cognito, dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
     // API を実装した Lambda 関数を作成する
     const visualizationDashboardApiFunction = new lambdaPython.PythonFunction(this, 'VisualizationDashboardApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/VisualizationDashboardApi'),
@@ -476,7 +477,7 @@ export class ApiGateway extends Construct {
       environment: {
         QUICKSIGHT_IDENTITY_REGION: quickSightIdentityRegion,
         QUICKSIGHT_USER_NAMESPACE: quickSightUserNamespace,
-        QUICKSIGHT_FEDERATION_ROLE_NAME: quickSightFederationRole.roleName,
+        QUICKSIGHT_FEDERATION_ROLE_NAME: cognito.quickSightFederationRole!.roleName,
         DYNAMODB_TABLE_NAME_DASHBOARDS: dynamoDb.dashboardsTable.tableName,
       },
 
@@ -495,7 +496,7 @@ export class ApiGateway extends Construct {
           service: 'quicksight',
           region: quickSightIdentityRegion,
           resource: 'user',
-          resourceName: `${quickSightUserNamespace}/${quickSightFederationRole.roleName}/*`,
+          resourceName: `${quickSightUserNamespace}/${cognito.quickSightFederationRole!.roleName}/*`,
         }),
       ],
     }));

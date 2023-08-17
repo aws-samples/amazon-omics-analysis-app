@@ -15,7 +15,7 @@ This repository contains the following codes.
   - User authentication with Amazon Cognito.
   - Provides all functionality required by frontend through REST API.
 
-- [AWS CDK](https://aws.amazon.com/jp/cdk/) stack to deploy frontend and backend.
+- [AWS CDK](https://aws.amazon.com/cdk/) stack to deploy frontend and backend.
 
 ## Screenshots
 
@@ -35,9 +35,9 @@ This repository contains the following codes.
 
 ### Prerequisites
 
-- Docker
+- [AWS Command Line Interface (AWS CLI)](https://aws.amazon.com/cli/)
 - Node.js
-- [AWS Command Line Interface (CLI)](https://aws.amazon.com/cli/)
+- Docker
 
 ### Edit cdk.json
 
@@ -80,6 +80,16 @@ OmicsFrontendStackxxxx.FrontendURL = https://xxxx.cloudfront.net
 ```
 
 <img src="docs/imgs/signin.png" alt="Sign in" width="50%"/>
+
+To create an account, select the 'Create Account' tab, enter your email and password, and click the 'Create Account' button.
+
+<img src="docs/imgs/signup.png" alt="Create Account" width="50%"/>
+
+When you receive an email with the title 'Verify your new account', enter the 6-digit number written in that email in the 'Verification Code' field and click the 'Confirm' button.
+
+<img src="docs/imgs/confirm.png" alt="Confirm" width="50%"/>
+
+Then, an account will be created and the application will be displayed.
 
 ## Documents
 

@@ -13,7 +13,7 @@
   - [Amazon Cognito](https://aws.amazon.com/cognito/) によるユーザー認証
   - フロントエンドが必要とする機能を API Gateway の REST API で提供
 
-- フロントエンドとバックエンドをデプロイするための [AWS CDK](https://aws.amazon.com/jp/cdk/) スタック
+- フロントエンドとバックエンドをデプロイするための [AWS CDK](https://aws.amazon.com/cdk/) スタック
 
 ## スクリーンショット
 
@@ -33,9 +33,9 @@
 
 ### 前提条件
 
-- Docker
+- [AWS Command Line Interface (AWS CLI)](https://aws.amazon.com/cli/)
 - Node.js
-- [AWS Command Line Interface (CLI)](https://aws.amazon.com/cli/)
+- Docker
 
 ### cdk.json の編集
 
@@ -78,6 +78,16 @@ OmicsFrontendStackxxxx.FrontendURL = https://xxxx.cloudfront.net
 ```
 
 <img src="docs/imgs/signin.png" alt="サインイン" width="50%"/>
+
+アカウントを作成するには、「Create Account」タブを選択してメールアドレスとパスワードを入力し、「Create Account」ボタンをクリックします。
+
+<img src="docs/imgs/signup.png" alt="アカウントの作成" width="50%"/>
+
+入力したメールアドレスに「Verify your new account」という題名のメールが届いたら、そのメールに書かれた6桁の数字を「Confirmation Code」の欄に入力して「Confirm」ボタンをクリックします。
+
+<img src="docs/imgs/confirm.png" alt="確認コードの入力" width="50%"/>
+
+すると、アカウントが作成されてアプリケーションが表示されます。
 
 ## ドキュメント
 

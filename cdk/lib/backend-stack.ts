@@ -77,7 +77,7 @@ export class BackendStack extends cdk.Stack {
       value: this.cognito.userPoolClient.userPoolClientId,
     });
 
-    // cdk.json で指定された各種 S3 バケットの情報を CDK に取り込む
+    // Omics ワークフローの実行結果の出力先となる S3 バケットを作成する
     const s3BucketForOutput = new s3.Bucket(this, 'OutputBucket', {
       // CDK でデプロイしたものを削除する際、バケットも連動して削除する設定
       // (意図せず削除してしまう可能性があるため、本番環境で DESTROY を使用するのはお勧めしません)
@@ -94,6 +94,10 @@ export class BackendStack extends cdk.Stack {
 
       // バケットへのアクセスに SSL を必須にする
       enforceSSL: true,
+    });
+    // ワークフロー実行結果の出力先バケットの S3 URI を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, "WorkflowOutputBucketURI", {
+      value: s3BucketForOutput.s3UrlForObject(),
     });
 
     // Step Functions による追加処理の結果を保存する DynamoDB テーブルを作成する

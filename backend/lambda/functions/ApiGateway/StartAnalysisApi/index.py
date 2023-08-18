@@ -152,7 +152,7 @@ def handle_start_analysis(userId: str, email: str, accountId: str, role: str, he
                 'WorkflowId': workflowId,
                 'WorkflowName': workflowName,
                 'RoleArn': roleArn,
-                'OutputUri': outputUri,
+                'OutputUri': outputUri.rstrip('/'),
                 'Parameters': {
                     **parameterDefaults,
                     **(parameters or {}),

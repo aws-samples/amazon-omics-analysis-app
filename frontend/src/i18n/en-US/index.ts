@@ -5,13 +5,13 @@ const analysisItem = {
   stopTime: 'Stop Time',
   executionTime: 'Execution Time',
   status: 'Status',
-  arn: 'Omics ARN',
+  arn: 'ARN',
   priority: 'Priority',
   storageCapacity: 'Storage Capacity',
 };
 
 export default {
-  appName: 'Amazon Omics Analysis App',
+  appName: 'AWS HealthOmics Analysis App',
   signout: 'SignOut',
   btn: {
     newAnalysis: 'New Analysis',

@@ -1,9 +1,9 @@
-# Amazon Omics Analysis App
+# AWS HealthOmics Analysis App
 
 このリポジトリには以下のコードが含まれています。
 
 - Vue.js と Quasar で実装されたフロントエンドアプリケーション
-  - [Amazon Omics](https://aws.amazon.com/omics/) によるバイオインフォマティックスのワークフローの実行
+  - [AWS HealthOmics](https://aws.amazon.com/healthomics/) によるバイオインフォマティックスのワークフローの実行
   - [AWS Step Functions](https://aws.amazon.com/step-functions/) による二次解析 (可視化) の実行
   - [Amazon Simple Email Service (SES)](https://aws.amazon.com/ses/) によるワークフロー完了通知メールの送信
   - ワークフロー実行結果のブラウズ

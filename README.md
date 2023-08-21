@@ -1,11 +1,11 @@
-# Amazon Omics Analysis App
+# AWS HealthOmics Analysis App
 
 ## 日本語の解説記事は[こちら](README.ja.md)
 
 This repository contains the following codes.
 
 - Frontend application implemented by Vue.js and Quasar.
-  - Run bioinformatics workflows with [Amazon Omics](https://aws.amazon.com/omics/)
+  - Run bioinformatics workflows with [AWS HealthOmics](https://aws.amazon.com/healthomics/)
   - Run secondary analysis (visualization) through [AWS Step Functions](https://aws.amazon.com/step-functions/).
   - Send notification emails with [Amazon Simple Email Service (SES)](https://aws.amazon.com/ses/) on workflow completion.
   - Browse workflow run outputs.

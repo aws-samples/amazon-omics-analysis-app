@@ -4,16 +4,16 @@
 
 In this application, Step Functions state machine named `OmicsWorkflowRunner` performs the following tasks.
 
-## Run Amazon Omics workflow
+## Run AWS HealthOmics workflow
 
 | Task name                  | Task type | Description |
 | -------------------------- | --------- | ----------- |
 | CheckOmicsStartRunTask     | Choice    | Is `OmicsStartRun` present in the input? |
-| OmicsStartRunTask          | Lambda    | Start Omics workflow run. |
-| WaitAfterOmicsStartRunTask | Wait      | Wait for a few minutes for Omics workflow run to complete. |
-| OmicsGetRunStatusTask      | Lambda    | Get Omics run status as `OmicsRun` output. |
-| CheckOmicsRunFinishedTask  | Choice    | Is Omics workflow run finished? |
-| CheckOmicsRunFailedTask    | Choice    | Is Omics workflow run failed? |
+| OmicsStartRunTask          | Lambda    | Start AWS HealthOmics workflow run. |
+| WaitAfterOmicsStartRunTask | Wait      | Wait for a few minutes for AWS HealthOmics workflow run to complete. |
+| OmicsGetRunStatusTask      | Lambda    | Get AWS HealthOmics run status as `OmicsRun` output. |
+| CheckOmicsRunFinishedTask  | Choice    | Is AWS HealthOmics workflow run finished? |
+| CheckOmicsRunFailedTask    | Choice    | Is AWS HealthOmics workflow run failed? |
 
 ## Secondary analysis (visualization)
 

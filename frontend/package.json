@@ -1,8 +1,8 @@
 {
   "name": "frontend",
   "version": "0.0.1",
-  "description": "Amazon Omics Analysis App",
-  "productName": "Amazon Omics Analysis App",
+  "description": "AWS HealthOmics Analysis App",
+  "productName": "AWS HealthOmics Analysis App",
   "private": true,
   "scripts": {
     "dev": "quasar dev",

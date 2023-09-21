@@ -1,6 +1,8 @@
 # AWS HealthOmics Analysis App
 
-## 日本語の解説記事は[こちら](README.ja.md)
+## 日本語の解説記事は[こちら](https://prototyping-blog.com/blog/aws-healthomics-analysis-app)
+
+[日本語版](README.ja.md)
 
 This repository contains the following codes.
 

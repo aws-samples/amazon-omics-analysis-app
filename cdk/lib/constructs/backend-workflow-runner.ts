@@ -269,21 +269,21 @@ export class WorkflowRunner extends Construct {
       comment: 'Is Omics workflow run failed?',
     });
 
-    // 'Visualization' がステートマシンの入力にあるかどうかをチェックするタスク
-    const checkVisualizationTask = new sfn.Choice(this, 'CheckVisualizationTask', {
-      comment: "Is 'Visualization' present in the input?",
+    // 'Visualizer' がステートマシンの入力にあるかどうかをチェックするタスク
+    const checkVisualizerTask = new sfn.Choice(this, 'CheckVisualizerTask', {
+      comment: "Is 'Visualizer' present in the input?",
     });
 
     // 可視化を実行する子ステートマシンを実行するタスク
     const visualizationTask = new StepFunctionsDynamicStateMachineExecutionTask(this, 'VisualizationTask', {
       comment: 'Start visualization of workflow run outputs with nested Step Functions state machine.',
-      stateMachineArn: sfn.JsonPath.stringAt('$.Visualization.StateMachineArn'),
+      stateMachineArn: sfn.JsonPath.stringAt('$.Visualizer.StateMachineArn'),
       name: sfn.JsonPath.format('{}-visualization', sfn.JsonPath.stringAt('$$.Execution.Name')),
       input: sfn.TaskInput.fromObject({
         AnalysisId: sfn.JsonPath.stringAt('$$.Execution.Id'),
         UserId: sfn.JsonPath.stringAt('$.UserId'),
         OmicsRun: sfn.JsonPath.objectAt('$.OmicsRun'),
-        Visualization: sfn.JsonPath.objectAt('$.Visualization'),
+        Visualizer: sfn.JsonPath.objectAt('$.Visualizer'),
       }),
       resultPath: '$.VisualizationResult',
     });
@@ -335,7 +335,7 @@ export class WorkflowRunner extends Construct {
           checkOmicsRunTask
           .when(sfn.Condition.isPresent('$.OmicsRun'),
             omicsGetRunTask
-            .next(checkVisualizationTask)
+            .next(checkVisualizerTask)
           )
           .otherwise(omicsWorkflowRunnerSucceedTask)
         )
@@ -350,8 +350,8 @@ export class WorkflowRunner extends Construct {
             .otherwise(
               checkOmicsRunFailedTask
               .when(sfn.Condition.booleanEquals('$.OmicsRun.IsError', false),
-                checkVisualizationTask
-                .when(sfn.Condition.isPresent('$.Visualization'),
+                checkVisualizerTask
+                .when(sfn.Condition.isPresent('$.Visualizer'),
                   visualizationTask
                 )
                 .afterwards({

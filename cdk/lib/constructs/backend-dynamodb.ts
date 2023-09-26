@@ -11,8 +11,8 @@ export interface DynamoDbProps {
  */
 export class DynamoDb extends Construct {
   /** 可視化の結果を保存するための DynamoDB テーブル */
-  readonly visualizationsTable: dynamodb.Table;
-  readonly dashboardsTable: dynamodb.Table;
+  readonly workflowVisualizersTable: dynamodb.Table;
+  readonly runVisualizationsTable: dynamodb.Table;
 
   /**
    * {@link DynamoDb} コンストラクトを作成する
@@ -25,23 +25,23 @@ export class DynamoDb extends Construct {
 
     const stageName = cdk.Stage.of(this)?.stageName;
 
-    // ワークフローで利用可能な可視化を管理する Visualizations テーブルを作成する
-    this.visualizationsTable = new dynamodb.Table(this, 'VisualizationsTable', {
-      tableName: `${stageName ?? ''}OmicsVisualizations`,
+    // ワークフローで利用可能な可視化を管理する WorkflowVisualizers テーブルを作成する
+    this.workflowVisualizersTable = new dynamodb.Table(this, 'WorkflowVisualizersTable', {
+      tableName: `${stageName ?? ''}OmicsWorkflowVisualizers`,
       partitionKey: {
         name: 'workflowId',
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: {
-        name: 'visualizationId',
+        name: 'visualizerId',
         type: dynamodb.AttributeType.STRING,
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY, // CloudFormation スタック削除時に自動削除されるように設定 (実運用ではお勧めしません)
     });
 
-    // ワークフロー実行結果の可視化結果を管理する Dashboards テーブルを作成する
-    this.dashboardsTable = new dynamodb.Table(this, 'DashboardsTable', {
-      tableName: `${stageName ?? ''}OmicsDashboards`,
+    // ワークフロー実行結果の可視化結果を管理する RunVisualizations テーブルを作成する
+    this.runVisualizationsTable = new dynamodb.Table(this, 'RunVisualizationsTable', {
+      tableName: `${stageName ?? ''}OmicsRunVisualizations`,
       partitionKey: {
         name: 'runId',
         type: dynamodb.AttributeType.STRING,

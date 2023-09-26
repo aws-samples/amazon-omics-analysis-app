@@ -17,7 +17,7 @@ OMICS_OUTPUT_BUCKET_URL = os.environ['OMICS_OUTPUT_BUCKET_URL']
 STEPFUNCTIONS_STATE_MACHINE_ARN = os.environ['STEPFUNCTIONS_STATE_MACHINE_ARN']
 
 # DynamoDB のテーブル名を環境変数から取得
-DYNAMODB_TABLE_NAME_VISUALIZATIONS = os.environ['DYNAMODB_TABLE_NAME_VISUALIZATIONS']
+DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS = os.environ['DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS']
 
 # AWS リージョンを環境変数から取得
 AWS_REGION = os.environ['AWS_REGION']
@@ -139,8 +139,8 @@ def handle_start_analysis(userId: str, email: str, accountId: str, role: str, he
     runGroupId = requestBody.get('runGroupId')
     logLevel = requestBody.get('logLevel')
     tags = requestBody.get('tags')
-    visualizationId = requestBody.get('visualizationId')
-    visualization = getVisualization(dynamodb, workflowType, workflowId, visualizationId, roleArn) if visualizationId else {}
+    visualizerId = requestBody.get('visualizerId')
+    visualizer = getVisualizer(dynamodb, workflowType, workflowId, visualizerId, roleArn) if visualizerId else {}
 
     # Step Functions ステートマシンを実行する
     response = sfn.start_execution(
@@ -165,7 +165,7 @@ def handle_start_analysis(userId: str, email: str, accountId: str, role: str, he
                 **({'LogLevel': logLevel} if logLevel else {}),
                 **({'Tags': tags} if tags else {}),
             },
-            **({'Visualization': visualization} if visualization else {}),
+            **({'Visualizer': visualizer} if visualizer else {}),
             'Notification': {
                 'Email': email,
                 'FrontendOrigin': origin,
@@ -192,12 +192,12 @@ def handle_start_analysis(userId: str, email: str, accountId: str, role: str, he
     }
 
 
-def getVisualization(dynamodb, workflowType: str, workflowId: str, visualizationId: str, roleArn: str):
+def getVisualizer(dynamodb, workflowType: str, workflowId: str, visualizerId: str, roleArn: str):
     response = dynamodb.get_item(
-        TableName=DYNAMODB_TABLE_NAME_VISUALIZATIONS,
+        TableName=DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS,
         Key=api_common.dict_to_dynamodb({
             'workflowId': f'{workflowType}_{workflowId}',
-            'visualizationId': visualizationId,
+            'visualizerId': visualizerId,
         }),
     )
 
@@ -205,7 +205,7 @@ def getVisualization(dynamodb, workflowType: str, workflowId: str, visualization
     item = api_common.dict_from_dynamodb(response.get('Item'))
 
     return {
-        'VisualizationId': visualizationId,
+        'VisualizerId': visualizerId,
         'Name': item.get('name'),
         'StateMachineArn': item['stateMachineArn'],
         'RoleArn': roleArn,

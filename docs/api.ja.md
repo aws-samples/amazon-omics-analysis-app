@@ -135,16 +135,16 @@ Body
 
 ## ワークフローの可視化に関する API
 
-ワークフローで利用可能な可視化 (`WorkflowVisualization`) は、以下のような定義の JSON データとして扱います。
+ワークフローで利用可能な可視化 (`WorkflowVisualizer`) は、以下のような定義の JSON データとして扱います。
 
-| フィールド名          | 型       | 内容           | 値  |
-| :------------------ | :------: | :------------ | :-- |
-| `workflowId`        | `string` | ワークフロー ID |     |
-| `visualizationId`   | `string` | 可視化 ID      |     |
-| `name`              | `string` | 可視化の表示名  |     |
-| `stateMachineArn`   | `string` | 可視化を実行する Step Functions ステートマシンの ARN |     |
+| フィールド名        | 型       | 内容           | 値  |
+| :---------------- | :------: | :------------ | :-- |
+| `workflowId`      | `string` | ワークフロー ID |     |
+| `visualizerId`    | `string` | 可視化 ID      |     |
+| `name`            | `string` | 可視化の表示名  |     |
+| `stateMachineArn` | `string` | 可視化を実行する Step Functions ステートマシンの ARN |     |
 
-### GET /workflows/`{workflowType}`/`{workflowId}`/visualizations
+### GET /workflows/`{workflowType}`/`{workflowId}`/visualizers
 
 指定されたワークフローで利用可能な可視化の一覧を返します。
 
@@ -160,7 +160,7 @@ Body
 リクエスト例
 
 ```
-GET /workflows/PRIVATE/1111111/visualizations?maxResults=100
+GET /workflows/PRIVATE/1111111/visualizers?maxResults=100
 ```
 
 #### レスポンス
@@ -169,10 +169,10 @@ Body
 
 `Content-Type: application/json`
 
-| フィールド名  | 型                        | 内容          |
-| :---------- | :-----------------------: | :----------- |
-| `items`     | `[WorkflowVisualization]` | 可視化のリスト |
-| `nextToken` | `string`                  | 総数が `maxResults` を超えた場合、次のページを取得するためのトークン |
+| フィールド名  | 型                     | 内容          |
+| :---------- | :--------------------: | :----------- |
+| `items`     | `[WorkflowVisualizer]` | 可視化のリスト |
+| `nextToken` | `string`               | 総数が `maxResults` を超えた場合、次のページを取得するためのトークン |
 
 レスポンス例
 
@@ -181,7 +181,7 @@ Body
    "items": [
       {
          "workflowId": "1111111",
-         "visualizationId": "tpm-dashboard",
+         "visualizerId": "tpm-dashboard",
          "name": "TPM visualization with dashboard",
          "stateMachineArn": "arn:aws:states:us-east-1:xxxx:stateMachine:xxxx"
       }
@@ -190,7 +190,7 @@ Body
 }
 ```
 
-### GET /workflows/`{workflowType}`/`{workflowId}`/visualizations/`{visualizationId}`
+### GET /workflows/`{workflowType}`/`{workflowId}`/visualizers/`{visualizerId}`
 
 指定されたワークフロー可視化の詳細情報を返します。
 
@@ -199,7 +199,7 @@ Body
 リクエスト例
 
 ```
-GET /workflows/PRIVATE/1111111/visualizations/tpm-dashboard
+GET /workflows/PRIVATE/1111111/visualizers/tpm-dashboard
 ```
 
 #### レスポンス
@@ -213,7 +213,7 @@ Body
 ```json
 {
    "workflowId": "1111111",
-   "visualizationId": "tpm-dashboard",
+   "visualizerId": "tpm-dashboard",
    "name": "TPM visualization with dashboard",
    "stateMachineArn": "arn:aws:states:us-east-1:xxxx:stateMachine:xxxx"
 }
@@ -674,11 +674,12 @@ S3 の Pre-signed URL を返します。
 
 ワークフロー実行結果の可視化 (`RunVisualization`) は、以下のような定義の JSON データとして扱います。
 
-| フィールド名        | 型       | 内容      | 値  |
-| :---------------- | :------: | :------- | :-- |
-| `runId`           | `string` | 実行 ID   |     |
-| `visualizationId` | `string` | 可視化 ID |     |
-| `dashboardId`     | `string` | QuickSight ダッシュボードの ID  |     |
+| フィールド名        | 型       | 内容        | 値  |
+| :---------------- | :------: | :--------- | :-- |
+| `runId`           | `string` | 実行 ID     |     |
+| `visualizationId` | `string` | 可視化 ID   |     |
+| `type`            | `string` | 可視化の種別 | QuickSightDashboard: QuickSight の埋め込みダッシュボード |
+| `dashboardId`     | `string` | QuickSight ダッシュボードの ID | (`type` が `QuickSightDashboard` の場合のみ) |
 
 ### GET /runs/`{runId}`/visualizations
 
@@ -749,6 +750,7 @@ Body
 {
    "runId": "1111111",
    "visualizationId": "tpm-dashboard",
+   "type": "QuickSightDashboard",
    "dashboardId": "prototype_rna_seq_dashboard"
 }
 ```

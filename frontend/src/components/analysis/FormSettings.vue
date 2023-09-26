@@ -8,7 +8,7 @@ import { useValidationStore } from 'stores/validation-store';
 
 import SelectWorkflowType from './SelectWorkflowType.vue';
 import SelectWorkflow from './SelectWorkflow.vue';
-import SelectVisualization from './SelectVisualization.vue';
+import SelectVisualizer from './SelectVisualizer.vue';
 
 defineComponent({
   name: 'FormSettings',
@@ -129,16 +129,16 @@ onUnmounted(() => {
         }
       "
     />
-    <select-visualization
-      name="visualization"
-      :model-value="modelValue.visualization"
+    <select-visualizer
+      name="visualizer"
+      :model-value="modelValue.visualizer"
       :workflow="modelValue.workflow"
       class="col-4"
       :readonly="readonly"
-      :label="$t('analysis.info.setting.params.visualization')"
+      :label="$t('analysis.info.setting.params.visualizer')"
       @update:model-value="
         (val) => {
-          emitModelValue('visualization', val);
+          emitModelValue('visualizer', val);
         }
       "
     />

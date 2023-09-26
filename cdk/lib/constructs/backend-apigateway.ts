@@ -130,15 +130,15 @@ export class ApiGateway extends Construct {
 
   /**
    * ワークフローの可視化に関する情報を取得する API を作成する
-   * `GET /workflows/{workflowType}/{workflowId}/visualizations`
-   * `GET /workflows/{workflowType}/{workflowId}/visualizations/{visualizationId}`
+   * `GET /workflows/{workflowType}/{workflowId}/visualizers`
+   * `GET /workflows/{workflowType}/{workflowId}/visualizers/{visualizerId}`
    * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
    * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addWorkflowVisualizationsApi(dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+  addWorkflowVisualizersApi(dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
     // API を実装した Lambda 関数を作成する
-    const workflowVisualizationsApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowVisualizationsApiFunction', {
-      entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowVisualizationsApi'),
+    const workflowVisualizersApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowVisualizersApiFunction', {
+      entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowVisualizersApi'),
       runtime: lambda.Runtime.PYTHON_3_9,
       architecture: lambda.Architecture.X86_64,
 
@@ -146,7 +146,7 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        DYNAMODB_TABLE_NAME_VISUALIZATIONS: dynamoDb.visualizationsTable.tableName,
+        DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: dynamoDb.workflowVisualizersTable.tableName,
       },
 
       layers: [layer],
@@ -154,15 +154,15 @@ export class ApiGateway extends Construct {
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
     });
-    dynamoDb.visualizationsTable.grantReadData(workflowVisualizationsApiFunction);
+    dynamoDb.workflowVisualizersTable.grantReadData(workflowVisualizersApiFunction);
 
     // API Gateway にルートを登録する
     const workflow = this.restApi.root.getResource('workflows')!.getResource('{workflowType}')!.getResource('{workflowId}')!;
-    const visualizations = workflow.addResource('visualizations');
-    visualizations.addMethod('GET', new apigw.LambdaIntegration(workflowVisualizationsApiFunction));
+    const visualizers = workflow.addResource('visualizers');
+    visualizers.addMethod('GET', new apigw.LambdaIntegration(workflowVisualizersApiFunction));
 
-    const visualization = visualizations.addResource('{visualizationId}');
-    visualization.addMethod('GET', new apigw.LambdaIntegration(workflowVisualizationsApiFunction));
+    const visualizer = visualizers.addResource('{visualizerId}');
+    visualizer.addMethod('GET', new apigw.LambdaIntegration(workflowVisualizersApiFunction));
   }
 
   /**
@@ -187,7 +187,7 @@ export class ApiGateway extends Construct {
         OMICS_WORKFLOW_RUN_ROLE_ARN: omicsWorkflowRunRole.roleArn,
         OMICS_OUTPUT_BUCKET_URL: s3BucketForOutput.s3UrlForObject(),
         STEPFUNCTIONS_STATE_MACHINE_ARN: workflowRunner.stateMachine.stateMachineArn,
-        DYNAMODB_TABLE_NAME_VISUALIZATIONS: dynamoDb.visualizationsTable.tableName,
+        DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: dynamoDb.workflowVisualizersTable.tableName,
         STAGE_NAME: cdk.Stage.of(this)?.stageName ?? '',
       },
 
@@ -204,7 +204,7 @@ export class ApiGateway extends Construct {
       resources: ['*'],
     }));
     workflowRunner.stateMachine.grantStartExecution(startAnalysisApiFunction);
-    dynamoDb.visualizationsTable.grantReadData(startAnalysisApiFunction);
+    dynamoDb.workflowVisualizersTable.grantReadData(startAnalysisApiFunction);
 
     // API Gateway にルートを登録する
     const analyses = this.restApi.root.addResource('analyses');
@@ -341,7 +341,7 @@ export class ApiGateway extends Construct {
 
   /**
    * ワークフローの出力ファイルを取得する API を作成する
-   * `POST /runs/{runId}/outputs`
+   * `GET /runs/{runId}/outputs`
    * @param layer Lambda 関数が利用する Lambda レイヤー
    */
   addRunOutputsApi(layer: lambda.ILayerVersion) {
@@ -436,7 +436,7 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        DYNAMODB_TABLE_NAME_DASHBOARDS: dynamoDb.dashboardsTable.tableName,
+        DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS: dynamoDb.runVisualizationsTable.tableName,
       },
 
       layers: [layer],
@@ -444,7 +444,7 @@ export class ApiGateway extends Construct {
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
     });
-    dynamoDb.dashboardsTable.grantReadData(runVisualizationsApiFunction);
+    dynamoDb.runVisualizationsTable.grantReadData(runVisualizationsApiFunction);
 
     // API Gateway にルートを登録する
     const run = this.restApi.root.getResource('runs')!.getResource('{runId}')!;
@@ -457,7 +457,7 @@ export class ApiGateway extends Construct {
 
   /**
    * ワークフローの出力を可視化するダッシュボードの URL を取得する API を作成する
-   * `POST /runs/{runId}/visualizations/{visualizationId}/dashboard`
+   * `GET /runs/{runId}/visualizations/{visualizationId}/dashboard`
    * @param quickSightIdentityRegion QuickSight のサインアップを行ったリージョン
    * @param quickSightUserNamespace QuickSight ユーザーの名前空間
    * @param cognito Cognito ユーザープールを構築する CDK コンストラクト
@@ -478,7 +478,7 @@ export class ApiGateway extends Construct {
         QUICKSIGHT_IDENTITY_REGION: quickSightIdentityRegion,
         QUICKSIGHT_USER_NAMESPACE: quickSightUserNamespace,
         QUICKSIGHT_FEDERATION_ROLE_NAME: cognito.quickSightFederationRole!.roleName,
-        DYNAMODB_TABLE_NAME_DASHBOARDS: dynamoDb.dashboardsTable.tableName,
+        DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS: dynamoDb.runVisualizationsTable.tableName,
       },
 
       layers: [layer],
@@ -500,7 +500,7 @@ export class ApiGateway extends Construct {
         }),
       ],
     }));
-    dynamoDb.dashboardsTable.grantReadData(visualizationDashboardApiFunction);
+    dynamoDb.runVisualizationsTable.grantReadData(visualizationDashboardApiFunction);
 
     // API Gateway にルートを登録する
     const run = this.restApi.root.getResource('runs')!.getResource('{runId}')!;

@@ -103,13 +103,13 @@ export class BackendStack extends cdk.Stack {
     // Step Functions による追加処理の結果を保存する DynamoDB テーブルを作成する
     this.dynamoDb = new DynamoDb(this, 'DynamoDb', {
     });
-    // DynamoDB の Visualizations テーブルの名前を CloudFormation スタックの出力に追加
-    new cdk.CfnOutput(this, "DynamoDbVisualizationsTableName", {
-      value: this.dynamoDb.visualizationsTable.tableName,
+    // DynamoDB の WorkflowVisualizers テーブルの名前を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, "DynamoDbWorkflowVisualizersTableName", {
+      value: this.dynamoDb.workflowVisualizersTable.tableName,
     });
-    // DynamoDB の Dashboards テーブルの名前を CloudFormation スタックの出力に追加
-    new cdk.CfnOutput(this, "DynamoDbDashboardsTableName", {
-      value: this.dynamoDb.dashboardsTable.tableName,
+    // DynamoDB の RunVisualizations テーブルの名前を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, "DynamoDbRunVisualizationsTableName", {
+      value: this.dynamoDb.runVisualizationsTable.tableName,
     });
 
     const stageName = cdk.Stage.of(this)?.stageName;
@@ -196,7 +196,7 @@ export class BackendStack extends cdk.Stack {
 
     // API Gateway に REST API の定義を追加
     this.apiGateway.addWorkflowsApi(this.commonLayer);
-    this.apiGateway.addWorkflowVisualizationsApi(this.dynamoDb, this.commonLayer);
+    this.apiGateway.addWorkflowVisualizersApi(this.dynamoDb, this.commonLayer);
     this.apiGateway.addStartAnalysisApi(s3BucketForOutput, omicsWorkflowRunRole, this.workflowRunner, this.dynamoDb, this.commonLayer);
     this.apiGateway.addRunsApi(this.commonLayer);
     this.apiGateway.addRunTasksApi(this.commonLayer);

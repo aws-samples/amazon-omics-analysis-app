@@ -168,7 +168,7 @@ const onClickRun = () => {
         workflowType: settings.value.workflow?.type,
         workflowId: settings.value.workflow?.id,
         parameters: registerParams,
-        visualizationId: settings.value.visualization?.visualizationId,
+        visualizerId: settings.value.visualizer?.visualizerId,
       });
 
       // 登録に成功したら一覧画面に戻って、通知を表示する

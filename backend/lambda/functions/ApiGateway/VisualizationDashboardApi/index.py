@@ -16,7 +16,7 @@ QUICKSIGHT_FEDERATION_ROLE_NAME = os.environ['QUICKSIGHT_FEDERATION_ROLE_NAME']
 QUICKSIGHT_USER_NAMESPACE = os.environ['QUICKSIGHT_USER_NAMESPACE']
 
 # DynamoDB テーブルの ARN を環境変数から取得
-DYNAMODB_TABLE_NAME_DASHBOARDS = os.environ['DYNAMODB_TABLE_NAME_DASHBOARDS']
+DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS = os.environ['DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS']
 
 # ログとトレースの機能を初期化
 logger = Logger()
@@ -100,18 +100,19 @@ def handler(event: dict, context: LambdaContext) -> dict:
 
 # ダッシュボードの埋め込み URL に関する処理を行う
 def handle_get_dashboard(accountId: str, userArn: str, runId: str, visualizationId: str, headers: dict) -> dict:
-    # DynamoDB の Dashboards テーブルからダッシュボードの ID を取得する
+    # DynamoDB の RunVisualizations テーブルからダッシュボードの ID を取得する
     response = dynamodb.get_item(
-        TableName=DYNAMODB_TABLE_NAME_DASHBOARDS,
+        TableName=DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS,
         Key=api_common.dict_to_dynamodb({
             'runId': runId,
             'visualizationId': visualizationId,
         }),
     )
     item = api_common.dict_from_dynamodb(response.get('Item'))
-    dashboardId = item.get('dashboardId') if item else None
 
-    if not dashboardId:
+    type = item.get('type') if item else None
+    dashboardId = item.get('dashboardId') if item else None
+    if type != 'QuickSightDashboard' or not dashboardId:
         # ダッシュボード ID が記録されていなければ 404 Not Found とする
         return {
             'statusCode': 404,

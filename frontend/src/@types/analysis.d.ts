@@ -11,7 +11,7 @@ export type AnalysisSettings = {
   priority: number;
   workflowType: WorkflowType;
   workflow?: Workflow;
-  visualization?: Visualization;
+  visualizer?: WorkflowVisualizer;
 };
 
 export type Workflow = {
@@ -85,7 +85,7 @@ export type StartAnalysisParams = {
   storageCapacity?: number;
   workflowType?: WorkflowType;
   workflowId?: string;
-  visualizationId?: string;
+  visualizerId?: string;
 };
 
 export type OutputItem = {
@@ -93,15 +93,16 @@ export type OutputItem = {
   size?: number;
 };
 
-export type Visualization = {
+export type WorkflowVisualizer = {
   workflowId: string;
-  visualizationId: string;
+  visualizerId: string;
   name: string;
   stateMachineArn: string;
 };
 
-export type Dashboard = {
+export type RunVisualization = {
   runId: string;
   visualizationId: string;
+  type: string;
   dashboardId: string;
 };

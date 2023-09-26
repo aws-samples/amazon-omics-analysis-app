@@ -7,7 +7,7 @@ import BannerError from '../common/BannerError.vue';
 import BannerAttention from '../common/BannerAttention.vue';
 
 defineComponent({
-  name: 'DashboardAnalysis',
+  name: 'VisualizationQuickSightDashboard',
 });
 
 const props = defineProps<{

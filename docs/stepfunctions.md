@@ -17,10 +17,10 @@ In this application, Step Functions state machine named `OmicsWorkflowRunner` pe
 
 ## Secondary analysis (visualization)
 
-| Task name              | Task type      | Description |
-| ---------------------- | -------------- | ----------- |
-| CheckVisualizationTask | Choice         | Is `Visualization` present in the input? |
-| VisualizationTask      | Step Functions | Start secondary analysis of workflow run outputs with nested Step Functions state machine. |
+| Task name           | Task type      | Description |
+| ------------------- | -------------- | ----------- |
+| CheckVisualizerTask | Choice         | Is `Visualizer` present in the input? |
+| VisualizationTask   | Step Functions | Start secondary analysis of workflow run outputs with nested Step Functions state machine. |
 
 ## Notify workflow completion
 

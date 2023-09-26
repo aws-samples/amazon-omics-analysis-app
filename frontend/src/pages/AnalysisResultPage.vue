@@ -10,7 +10,7 @@ import {
   Analysis,
   ParameterValue,
   Workflow,
-  Dashboard,
+  RunVisualization,
 } from 'src/@types/analysis';
 import FormSettings from '../components/analysis/FormSettings.vue';
 import useAnalysis, { GetTasksResponse } from 'src/services/useAnalysis';
@@ -20,7 +20,7 @@ import { useI18n } from 'vue-i18n';
 import DisplayBasicInfo from 'src/components/analysis/DisplayBasicInfo.vue';
 import TaskTimelineChart from 'src/components/analysis/TaskTimelineChart.vue';
 import TableTask from 'src/components/analysis/TableTask.vue';
-import DashboardAnalysis from 'src/components/analysis/DashboardAnalysis.vue';
+import VisualizationQuickSightDashboard from 'src/components/analysis/VisualizationQuickSightDashboard.vue';
 
 import TreeOutputs from 'src/components/analysis/TreeOutputs.vue';
 import CardInfomation from 'src/components/common/CardInfomation.vue';
@@ -52,7 +52,7 @@ const id = _.isArray(route.params['id'])
 
 const resAnalysis = ref<Analysis>();
 const workflow = ref<Workflow | undefined>();
-const allDashboards = ref<Dashboard[]>();
+const allRunVisualizations = ref<RunVisualization[]>();
 
 const searchRun = async () => {
   try {
@@ -62,12 +62,12 @@ const searchRun = async () => {
     workflow.value = await analysis.getWorkflow(resAnalysis.value.workflowType, resAnalysis.value.workflowId);
 
     let startingToken: string | undefined = undefined;
-    allDashboards.value = [];
+    allRunVisualizations.value = [];
     do {
-      const dashboards = await analysis.getDashboards(id);
-      if (dashboards.items) {
-        allDashboards.value.push(...dashboards.items);
-        startingToken = dashboards.nextToken;
+      const runVisualizations = await analysis.getRunVisualizations(id);
+      if (runVisualizations.items) {
+        allRunVisualizations.value.push(...runVisualizations.items);
+        startingToken = runVisualizations.nextToken;
       } else {
         break;
       }
@@ -76,6 +76,12 @@ const searchRun = async () => {
     $q.loading.hide();
   }
 };
+
+const allDashboards = computed(() =>
+  allRunVisualizations.value?.filter(
+    visualization => visualization.type === 'QuickSightDashboard'
+  ) ?? []
+);
 
 (async () => {
   searchRun();
@@ -193,7 +199,7 @@ const onClickReRun = () => {
           :key="dashboard.dashboardId"
           :title="$t('analysis.result.dashboard.title')"
         >
-          <dashboard-analysis :run-id="dashboard.runId" :visualization-id="dashboard.visualizationId"/>
+          <visualization-quick-sight-dashboard :run-id="dashboard.runId" :visualization-id="dashboard.visualizationId"/>
         </card-infomation>
 
         <!-- Output一覧 -->

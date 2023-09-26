@@ -5,8 +5,8 @@ import {
   StartAnalysisParams,
   WorkflowType,
   Workflow,
-  Visualization,
-  Dashboard,
+  WorkflowVisualizer,
+  RunVisualization,
 } from 'src/@types/analysis';
 import { api, apiWithoutErrorHandling } from 'src/boot/axios';
 
@@ -73,13 +73,13 @@ export type GetWorkflowsResponse = {
   nextToken?: string;
 };
 
-export type GetVisualizationsResponse = {
-  items: Visualization[];
+export type GetWorkflowVisualizersResponse = {
+  items: WorkflowVisualizer[];
   nextToken?: string;
 };
 
-export type GetDashboardsResponse = {
-  items: Dashboard[];
+export type GetRunVisualizationsResponse = {
+  items: RunVisualization[];
   nextToken?: string;
 };
 
@@ -242,10 +242,10 @@ const useAnalysis = () => {
      * @param workflowType ワークフロー種別
      * @param workflowId ワークフローID
      * @param startingToken ページング処理用トークン
-     * @returns 可視化一覧
+     * @returns ワークフローの可視化一覧
      */
-    getVisualizations: async (workflowType: WorkflowType, workflowId: string, startingToken?: string) => {
-      const response = await api.get<GetVisualizationsResponse>(`/workflows/${workflowType}/${workflowId}/visualizations`, {
+    getWorkflowVisualizers: async (workflowType: WorkflowType, workflowId: string, startingToken?: string) => {
+      const response = await api.get<GetWorkflowVisualizersResponse>(`/workflows/${workflowType}/${workflowId}/visualizers`, {
         params: {
           ...(startingToken && { startingToken: startingToken }),
         },
@@ -257,22 +257,22 @@ const useAnalysis = () => {
      * 可視化の詳細情報を取得
      * @param workflowType ワークフロー種別
      * @param workflowId ワークフローID
-     * @param visualizationId 可視化ID
-     * @returns 可視化の詳細情報
+     * @param visualizerId 可視化ID
+     * @returns ワークフローの可視化の詳細情報
      */
-    getVisualization: async (workflowType: WorkflowType, workflowId: string, visualizationId: string) => {
-      const response = await api.get<Visualization>(`/workflows/${workflowType}/${workflowId}/visualizations/${visualizationId}`);
+    getWorkflowVisualizer: async (workflowType: WorkflowType, workflowId: string, visualizerId: string) => {
+      const response = await api.get<WorkflowVisualizer>(`/workflows/${workflowType}/${workflowId}/visualizers/${visualizerId}`);
       return response.data;
     },
 
     /**
-     * 指定された実行のダッシュボード一覧の取得
+     * 指定された実行の可視化一覧の取得
      * @param runId 実行 ID
      * @param startingToken ページング処理用トークン
-     * @returns ダッシュボード一覧
+     * @returns 実行の可視化一覧
      */
-    getDashboards: async (runId: string, startingToken?: string) => {
-      const response = await api.get<GetDashboardsResponse>(`/runs/${runId}/visualizations`, {
+    getRunVisualizations: async (runId: string, startingToken?: string) => {
+      const response = await api.get<GetRunVisualizationsResponse>(`/runs/${runId}/visualizations`, {
         params: {
           ...(startingToken && { startingToken: startingToken }),
         },
@@ -281,7 +281,7 @@ const useAnalysis = () => {
     },
 
     /**
-     * 指定されたダッシュボードの埋め込み用 URL の取得
+     * 指定された実行の QuickSight ダッシュボード埋め込み用 URL の取得
      * @param runId 実行 ID
      * @param visualizationId 可視化 ID
      * @returns ダッシュボード埋め込み用 URL

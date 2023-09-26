@@ -8,7 +8,7 @@ from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 # DynamoDB のテーブル名を環境変数から取得
-DYNAMODB_TABLE_NAME_DASHBOARDS = os.environ['DYNAMODB_TABLE_NAME_DASHBOARDS']
+DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS = os.environ['DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS']
 
 # ログとトレースの機能を初期化
 logger = Logger()
@@ -95,9 +95,9 @@ def handle_list_run_visualizations(runId: str, queryParams: dict) -> dict:
     maxResults = queryParams.get('maxResults')
     startingToken = queryParams.get('startingToken')
 
-    # DynamoDB の Dashboards テーブルから、指定された runId の可視化の一覧を取得する
+    # DynamoDB の RunVisualizations テーブルから、指定された runId の可視化の一覧を取得する
     response = dynamodb.query(
-        TableName=DYNAMODB_TABLE_NAME_DASHBOARDS,
+        TableName=DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS,
         KeyConditionExpression='runId = :runId',
         ExpressionAttributeValues=api_common.dict_to_dynamodb({
             ':runId': runId,
@@ -127,9 +127,9 @@ def handle_list_run_visualizations(runId: str, queryParams: dict) -> dict:
 
 # 特定の可視化の詳細情報を返す
 def handle_get_run_visualization(runId: str, visualizationId: str, queryParams: dict) -> dict:
-    # DynamoDB の Dashboards テーブルから可視化の詳細情報を取得する
+    # DynamoDB の RunVisualizations テーブルから可視化の詳細情報を取得する
     response = dynamodb.get_item(
-        TableName=DYNAMODB_TABLE_NAME_DASHBOARDS,
+        TableName=DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS,
         Key=api_common.dict_to_dynamodb({
             'runId': runId,
             'visualizationId': visualizationId,

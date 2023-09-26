@@ -17,10 +17,10 @@
 
 ## 二次解析 (可視化)
 
-| Task name              | Task type      | Description |
-| ---------------------- | -------------- | ----------- |
-| CheckVisualizationTask | Choice         | 入力に `Visualization` が含まれているかを確認 |
-| VisualizationTask      | Step Functions | ワークフロー実行結果の二次解析を実行するため、別の Step Functions ステートマシンを起動 |
+| Task name           | Task type      | Description |
+| ------------------- | -------------- | ----------- |
+| CheckVisualizerTask | Choice         | 入力に `Visualizer` が含まれているかを確認 |
+| VisualizationTask   | Step Functions | ワークフロー実行結果の二次解析を実行するため、別の Step Functions ステートマシンを起動 |
 
 ## ワークフローの完了通知
 

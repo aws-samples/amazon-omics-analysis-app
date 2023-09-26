@@ -8,7 +8,7 @@ from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 # DynamoDB のテーブル名を環境変数から取得
-DYNAMODB_TABLE_NAME_VISUALIZATIONS = os.environ['DYNAMODB_TABLE_NAME_VISUALIZATIONS']
+DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS = os.environ['DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS']
 
 # ログとトレースの機能を初期化
 logger = Logger()
@@ -45,13 +45,13 @@ def handler(event: dict, context: LambdaContext) -> dict:
     queryParams = event.get('queryStringParameters') or {}
 
     try:
-        visualizationId = pathParams.get('visualizationId')
-        if not visualizationId:
+        visualizerId = pathParams.get('visualizerId')
+        if not visualizerId:
             # パスに可視化 ID が含まれていなかったら、可視化の一覧を返す
-            return handle_list_visualizations(workflowType, workflowId, queryParams)
+            return handle_list_visualizers(workflowType, workflowId, queryParams)
         else:
             # 可視化 ID が含まれていたら、特定の可視化の詳細情報を返す
-            return handle_get_visualization(workflowType, workflowId, visualizationId, queryParams)
+            return handle_get_visualizer(workflowType, workflowId, visualizerId, queryParams)
 
     except botocore.exceptions.ClientError as err:
         statusCode = err.response['ResponseMetadata']['HTTPStatusCode']
@@ -92,13 +92,13 @@ def handler(event: dict, context: LambdaContext) -> dict:
 
 
 # 可視化の一覧を返す
-def handle_list_visualizations(workflowType: str, workflowId: str, queryParams: dict) -> dict:
+def handle_list_visualizers(workflowType: str, workflowId: str, queryParams: dict) -> dict:
     maxResults = queryParams.get('maxResults')
     startingToken = queryParams.get('startingToken')
 
-    # DynamoDB の Visualizations テーブルから、指定された workflowId の可視化の一覧を取得する
+    # DynamoDB の WorkflowVisualizers テーブルから、指定された workflowId の可視化の一覧を取得する
     response = dynamodb.query(
-        TableName=DYNAMODB_TABLE_NAME_VISUALIZATIONS,
+        TableName=DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS,
         KeyConditionExpression='workflowId = :workflowId',
         ExpressionAttributeValues=api_common.dict_to_dynamodb({
             ':workflowId': f'{workflowType}_{workflowId}',
@@ -127,13 +127,13 @@ def handle_list_visualizations(workflowType: str, workflowId: str, queryParams: 
 
 
 # 特定の可視化の詳細情報を返す
-def handle_get_visualization(workflowType: str, workflowId: str, visualizationId: str, queryParams: dict) -> dict:
-    # DynamoDB の Visualizations テーブルから可視化の詳細情報を取得する
+def handle_get_visualizer(workflowType: str, workflowId: str, visualizerId: str, queryParams: dict) -> dict:
+    # DynamoDB の WorkflowVisualizers テーブルから可視化の詳細情報を取得する
     response = dynamodb.get_item(
-        TableName=DYNAMODB_TABLE_NAME_VISUALIZATIONS,
+        TableName=DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS,
         Key=api_common.dict_to_dynamodb({
             'workflowId': f'{workflowType}_{workflowId}',
-            'visualizationId': visualizationId,
+            'visualizerId': visualizerId,
         }),
     )
 

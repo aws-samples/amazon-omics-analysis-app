@@ -61,7 +61,7 @@ export default {
           logLevel: 'Log Level',
           workflowType: 'Workflow Type',
           workflow: 'Workflow',
-          visualization: 'Visualization',
+          visualizer: 'Visualizer',
           s3output: 'S3 Output URI',
         },
       },

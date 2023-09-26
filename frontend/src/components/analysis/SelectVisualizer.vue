@@ -1,63 +1,63 @@
 <script setup lang="ts">
-import { Visualization, Workflow } from 'src/@types/analysis';
-import useAnalysis, { GetVisualizationsResponse } from 'src/services/useAnalysis';
+import { WorkflowVisualizer, Workflow } from 'src/@types/analysis';
+import useAnalysis, { GetWorkflowVisualizersResponse } from 'src/services/useAnalysis';
 import { useField } from 'vee-validate';
 import { defineComponent, ref, toRef, watch } from 'vue';
 import _ from 'lodash';
 
 defineComponent({
-  name: 'SelectVisualization',
+  name: 'SelectVisualizer',
 });
 
 const props = defineProps<{
   workflow?: Workflow;
   name: string;
-  modelValue?: Visualization;
+  modelValue?: WorkflowVisualizer;
   readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: Visualization): void;
+  (e: 'update:model-value', value: WorkflowVisualizer): void;
 }>();
 
-const visualizationOptions = ref<Visualization[]>();
+const visualizerOptions = ref<WorkflowVisualizer[]>();
 const analysis = useAnalysis();
 
-const loadVisualizations = async (
+const loadVisualizers = async (
   val: string,
   update: (callback: () => void) => void
 ) => {
-  if (visualizationOptions.value) {
+  if (visualizerOptions.value || !props.workflow) {
     update(() => {
       // do nothing.
     });
     return;
   }
 
-  let allVisualizations: Visualization[] = [];
+  let allVisualizers: WorkflowVisualizer[] = [];
   let startingToken: string | undefined = undefined;
   do {
-    const visualizations: GetVisualizationsResponse = await analysis.getVisualizations(props.workflow!.type, props.workflow!.id, startingToken);
-    allVisualizations.push(...visualizations.items);
-    startingToken = visualizations.nextToken;
+    const visualizers: GetWorkflowVisualizersResponse = await analysis.getWorkflowVisualizers(props.workflow.type, props.workflow.id, startingToken);
+    allVisualizers.push(...visualizers.items);
+    startingToken = visualizers.nextToken;
   } while (startingToken);
 
-  allVisualizations = _.sortBy(allVisualizations, visualization => visualization.name);
+  allVisualizers = _.sortBy(allVisualizers, visualizer => visualizer.name);
 
   update(() => {
-    visualizationOptions.value = allVisualizations;
+    visualizerOptions.value = allVisualizers;
   });
 };
 
 // props.nameとKeyが一致したスキーマ情報でValidationを行う
 // 以下の設定を行うことで、VeeValidateがValidationを実行できるようになる
 const nameRef = toRef(props, 'name');
-const { errorMessage, value } = useField<Visualization | undefined>(nameRef);
+const { errorMessage, value } = useField<WorkflowVisualizer | undefined>(nameRef);
 
 watch(() => props.workflow, () => {
   if (!props.readonly) {
     value.value = undefined;
-    visualizationOptions.value = undefined;
+    visualizerOptions.value = undefined;
   }
 });
 </script>
@@ -65,11 +65,11 @@ watch(() => props.workflow, () => {
 <template>
   <q-select
     :model-value="value"
-    :options="visualizationOptions"
+    :options="visualizerOptions"
     map-options
     option-label="name"
     :disable="!props.workflow"
-    @filter="loadVisualizations"
+    @filter="loadVisualizers"
     outlined
     :readonly="readonly"
     :error="!!errorMessage"

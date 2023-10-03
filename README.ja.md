@@ -61,8 +61,7 @@
 ```
 npm ci
 npx cdk bootstrap
-npx cdk deploy OmicsBackendStack --require-approval never
-npx cdk deploy OmicsFrontendStack --require-approval never
+npx cdk deploy OmicsAnalysisAppStack --require-approval never
 ```
 
 ### メールアドレスの検証
@@ -71,10 +70,10 @@ npx cdk deploy OmicsFrontendStack --require-approval never
 
 ### サインイン
 
-デプロイが完了したら、`OmicsFrontendStackxxxx.FrontendURL` として以下のように表示された URL にアクセスする事でアプリケーションを利用できます。
+デプロイが完了したら、`OmicsAnalysisAppStackxxxx.FrontendURL` として以下のように表示された URL にアクセスする事でアプリケーションを利用できます。
 
 ```
-OmicsFrontendStackxxxx.FrontendURL = https://xxxx.cloudfront.net
+OmicsAnalysisAppStackxxxx.FrontendURL = https://xxxx.cloudfront.net
 ```
 
 <img src="docs/imgs/signin.png" alt="サインイン" width="50%"/>

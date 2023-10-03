@@ -65,8 +65,7 @@ Execute the following commands in `/cdk` directory.
 ```
 npm ci
 npx cdk bootstrap
-npx cdk deploy OmicsBackendStack --require-approval never
-npx cdk deploy OmicsFrontendStack --require-approval never
+npx cdk deploy OmicsAnalysisAppStack --require-approval never
 ```
 
 ### Verify your email address
@@ -75,10 +74,10 @@ To receive email of workflow completion notification, your email address must be
 
 ### Sign in
 
-Now you can use this application by accessing the following URL displayed as `OmicsFrontendStackxxxx.FrontendURL`.
+Now you can use this application by accessing the following URL displayed as `OmicsAnalysisAppStackxxxx.FrontendURL`.
 
 ```
-OmicsFrontendStackxxxx.FrontendURL = https://xxxx.cloudfront.net
+OmicsAnalysisAppStackxxxx.FrontendURL = https://xxxx.cloudfront.net
 ```
 
 <img src="docs/imgs/signin.png" alt="Sign in" width="50%"/>

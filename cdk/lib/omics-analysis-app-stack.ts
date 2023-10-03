@@ -6,43 +6,48 @@ import * as lambdaPython from '@aws-cdk/aws-lambda-python-alpha';
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as iam from 'aws-cdk-lib/aws-iam';
 
+import { NodejsBuild } from 'deploy-time-build';
 import * as path from 'path';
 
 import { Cognito } from './constructs/backend-cognito';
 import { ApiGateway } from './constructs/backend-apigateway';
 import { WorkflowRunner } from './constructs/backend-workflow-runner';
 import { DynamoDb } from './constructs/backend-dynamodb';
+import { CloudFront } from './constructs/frontend-cloudfront';
 import { Waf } from './constructs/waf';
 
-/** {@link BackendStack} のパラメーター */
-export interface BackendStackProps extends cdk.StackProps {
+/** {@link OmicsAnalysisAppStack} のパラメーター */
+export interface OmicsAnalysisAppStackProps extends cdk.StackProps {
+  /** フロントエンドとバックエンドへの接続を許可する IP アドレスの CIDR */
+  ipv4Ranges?: string[];
+  ipv6Ranges?: string[];
+
   /** QuickSight のサインアップを行ったリージョン */
   quickSightIdentityRegion?: string;
   /** QuickSight ユーザーの名前空間 */
   quickSightUserNamespace?: string;
-
-  /** バックエンド API への接続を許可する IP アドレスの CIDR */
-  ipv4Ranges: string[] | undefined;
-  ipv6Ranges: string[] | undefined;
 }
 
-/** バックエンドを構築する CDK スタック */
-export class BackendStack extends cdk.Stack {
+/** AWS HealthOmics Analysis App を構築する CDK スタック */
+export class OmicsAnalysisAppStack extends cdk.Stack {
   readonly cognito: Cognito;
   readonly dynamoDb: DynamoDb;
   readonly workflowRunner: WorkflowRunner;
   readonly apiGateway: ApiGateway;
-  readonly waf?: Waf;
+  readonly backendWaf?: Waf;
+
+  readonly cloudfront: CloudFront;
+  readonly frontendWaf?: Waf;
 
   readonly commonLayer: lambdaPython.PythonLayerVersion;
 
   /**
-   * {@link BackendStack} をデプロイする
+   * {@link OmicsAnalysisAppStack} をデプロイする
    * @param scope スタックのスコープ
    * @param id スタックの ID
    * @param props パラメーター
    */
-  constructor(scope: Construct, id: string, props: BackendStackProps) {
+  constructor(scope: Construct, id: string, props: OmicsAnalysisAppStackProps) {
     super(scope, id, props);
 
     // Lambda 関数が共通で利用するライブラリをまとめた Lambda レイヤーを作成する
@@ -184,9 +189,45 @@ export class BackendStack extends cdk.Stack {
       exportName: `${stageName ?? ''}OmicsWorkflowRunnerRoleArn`,
     });
 
+    // フロントエンドへのアクセスを制限する Web ACLを作成
+    if (props.ipv4Ranges || props.ipv6Ranges) {
+      this.frontendWaf = new Waf(this, 'FrontendWaf', {
+        ipv4Ranges: props.ipv4Ranges,
+        ipv6Ranges: props.ipv6Ranges,
+        scope: 'CLOUDFRONT',
+      });
+    }
+
+    // フロントエンドのアセットを配信する CloudFront を作成
+    this.cloudfront = new CloudFront(this, 'CloudFront', {
+      webAclId: this.frontendWaf?.webAcl?.attrArn,
+    });
+
+    // フロントエンドの URL を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, 'FrontendURL', {
+      value: this.cloudfront.url,
+    });
+
+    // フロントエンドのアセットを格納する S3 バケット名を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, 'FrontendBucket', {
+      value: this.cloudfront.assetBucket.s3UrlForObject(),
+    });
+
+    // CloudFront へのアクセスログを格納する S3 バケット名を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, 'FrontendAccessLogBucket', {
+      value: this.cloudfront.accessLogBucket.s3UrlForObject(),
+    });
+
+    s3BucketForOutput.addCorsRule({
+      allowedOrigins: [this.cloudfront.url],
+      allowedMethods: [s3.HttpMethods.GET],
+    });
+
     // API Gateway REST API と関連りソースを作成
     this.apiGateway = new ApiGateway(this, 'ApiGateway', {
       userPool: this.cognito.userPool,
+      layer: this.commonLayer,
+      allowOrigin: this.cloudfront.url,
     });
 
     // バックエンド API の URL を CloudFormation スタックの出力に追加
@@ -195,22 +236,22 @@ export class BackendStack extends cdk.Stack {
     });
 
     // API Gateway に REST API の定義を追加
-    this.apiGateway.addWorkflowsApi(this.commonLayer);
-    this.apiGateway.addWorkflowVisualizersApi(this.dynamoDb, this.commonLayer);
-    this.apiGateway.addStartAnalysisApi(s3BucketForOutput, omicsWorkflowRunRole, this.workflowRunner, this.dynamoDb, this.commonLayer);
-    this.apiGateway.addRunsApi(this.commonLayer);
-    this.apiGateway.addRunTasksApi(this.commonLayer);
-    this.apiGateway.addTaskLogApi(this.commonLayer);
-    this.apiGateway.addRunOutputsApi(this.commonLayer);
-    this.apiGateway.addDeleteRunApi(this.commonLayer);
-    this.apiGateway.addRunVisualizationsApi(this.dynamoDb, this.commonLayer);
+    this.apiGateway.addWorkflowsApi();
+    this.apiGateway.addWorkflowVisualizersApi(this.dynamoDb);
+    this.apiGateway.addStartAnalysisApi(s3BucketForOutput, omicsWorkflowRunRole, this.workflowRunner, this.dynamoDb);
+    this.apiGateway.addRunsApi();
+    this.apiGateway.addRunTasksApi();
+    this.apiGateway.addTaskLogApi();
+    this.apiGateway.addRunOutputsApi();
+    this.apiGateway.addDeleteRunApi();
+    this.apiGateway.addRunVisualizationsApi(this.dynamoDb);
     if (props.quickSightIdentityRegion && props.quickSightUserNamespace) {
-      this.apiGateway.addVisualizationDashboardApi(props.quickSightIdentityRegion, props.quickSightUserNamespace, this.cognito, this.dynamoDb, this.commonLayer);
+      this.apiGateway.addVisualizationDashboardApi(props.quickSightIdentityRegion, props.quickSightUserNamespace, this.cognito, this.dynamoDb);
     }
 
     // バックエンド API へのアクセスを制限する Web ACL を作成
     if (props.ipv4Ranges || props.ipv6Ranges) {
-      this.waf = new Waf(this, 'Waf', {
+      this.backendWaf = new Waf(this, 'BackendWaf', {
         ipv4Ranges: props.ipv4Ranges,
         ipv6Ranges: props.ipv6Ranges,
         scope: 'REGIONAL',
@@ -218,15 +259,58 @@ export class BackendStack extends cdk.Stack {
 
       // Web ACL を API Gateway に設定する
       new wafv2.CfnWebACLAssociation(this, "WebAclAssociationRestApi", {
-        webAclArn: this.waf.webAcl.attrArn,
+        webAclArn: this.backendWaf.webAcl.attrArn,
         resourceArn: this.apiGateway.restApi.deploymentStage.stageArn,
       });
 
       // Web ACL を Cognito ユーザープールに設定する
       new wafv2.CfnWebACLAssociation(this, "WebAclAssociationUserPool", {
-        webAclArn: this.waf.webAcl.attrArn,
+        webAclArn: this.backendWaf.webAcl.attrArn,
         resourceArn: this.cognito.userPool.userPoolArn,
       });
     }
+
+    // フロントエンドのアセットをビルドし、S3 バケットにアップロードする
+    new NodejsBuild(this, 'NodejsBuild', {
+      assets: [
+        // フロントエンドのソースコードの場所を指定
+        {
+          path: path.join(__dirname, '../../frontend'),
+          exclude: [
+            'dist',
+            'node_modules'
+          ],
+        },
+      ],
+      outputSourceDirectory: 'dist/spa',
+
+      // ビルド時の環境変数に各種設定を反映する
+      buildEnvironment: {
+        // バックエンド API の URL
+        VITE_API_URL: this.apiGateway.restApi.url,
+        // Cognito ユーザープールがデプロイされたリージョン
+        VITE_AUTH_REGION: this.cognito.userPool.env.region,
+        // Cognito ユーザープール ID
+        VITE_AUTH_USER_POOL_ID: this.cognito.userPool.userPoolId,
+        // Cognito ユーザープールクライアントの ID
+        VITE_AUTH_WEB_CLIENT_ID: this.cognito.userPoolClient.userPoolClientId,
+      },
+
+      // ビルドを実行する Node.js のバージョンを指定
+      nodejsVersion: 18,
+
+      // ビルドを実行するためのコマンド
+      buildCommands: [
+        'npm ci',
+        'npm run build'
+      ],
+
+      // アップロード先の S3 バケット
+      destinationBucket: this.cloudfront.assetBucket,
+
+      // アップロード完了後、新しいアセットを即時反映するために CloudFront のキャッシュを消すための設定
+      // 参考: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3_deployment.BucketDeployment.html
+      distribution: this.cloudfront.distribution,
+    });
   }
 }

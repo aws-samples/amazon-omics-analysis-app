@@ -1,3 +1,4 @@
+import os
 import collections.abc as collections_abc
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -5,11 +6,13 @@ from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 # 複数の Lambda 関数で共通利用するヘルパー関数を集めたライブラリ
 
+# CORS の Allow-Origin を環境変数から取得
+CORS_ALLOW_ORIGIN = os.environ['CORS_ALLOW_ORIGIN']
 
 # Cross-Origin Resource Sharing で REST API から返すレスポンスヘッダーの定義
 # https://developer.mozilla.org/ja/docs/Web/HTTP/CORS
 CORS_HEADERS = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': CORS_ALLOW_ORIGIN,
     'Access-Control-Allow-Methods': 'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
 }

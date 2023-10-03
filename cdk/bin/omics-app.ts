@@ -2,8 +2,7 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 
-import { BackendStack } from '../lib/backend-stack';
-import { FrontendStack } from '../lib/frontend-stack';
+import { OmicsAnalysisAppStack } from '../lib/omics-analysis-app-stack';
 
 const app = new cdk.App();
 
@@ -22,8 +21,8 @@ const ipv6Ranges: string[] | undefined = app.node.tryGetContext("allowdIPv6Addre
 
 const scope: cdk.Stage | cdk.App = stageName ? new cdk.Stage(app, stageName) : app;
 
-// バックエンドを作成する
-const backendStack = new BackendStack(scope, 'OmicsBackendStack', {
+// AWS HealthOmics Analysis App を作成する
+const omicsAnalysisAppStack = new OmicsAnalysisAppStack(scope, 'OmicsAnalysisAppStack', {
   quickSightIdentityRegion: quickSightIdentityRegion,
   quickSightUserNamespace: quickSightUserNamespace,
 
@@ -38,19 +37,3 @@ const backendStack = new BackendStack(scope, 'OmicsBackendStack', {
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
-
-// フロントエンドを作成する
-const frontendStack = new FrontendStack(scope, 'OmicsFrontendStack', {
-  ipv4Ranges: ipv4Ranges,
-  ipv6Ranges: ipv6Ranges,
-
-  cognito: backendStack.cognito,
-  apiGateway: backendStack.apiGateway,
-
-  env: {
-    region: 'us-east-1',
-  },
-});
-
-// バックエンドを作成した後にフロントエンドが作成されるように、依存関係を設定する
-frontendStack.addDependency(backendStack);

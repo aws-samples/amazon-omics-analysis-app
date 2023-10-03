@@ -18,6 +18,12 @@ import { WorkflowRunner } from "./backend-workflow-runner";
 export interface ApiGatewayProps {
   /** ユーザー認証に使う Cognito ユーザープール */
   userPool: cognito.IUserPool;
+
+  /** Lambda 関数が利用する Lambda レイヤー */
+  layer: lambda.ILayerVersion;
+
+  /** CORS の Allow-Origin */
+  allowOrigin: string;
 }
 
 /**
@@ -27,6 +33,12 @@ export class ApiGateway extends Construct {
   /** API Gateway REST API */
   readonly restApi: apigw.RestApi;
 
+  /** Lambda 関数が利用する Lambda レイヤー */
+  readonly layer: lambda.ILayerVersion;
+
+  /** CORS の Allow-Origin */
+  readonly allowOrigin: string;
+
   /**
    * {@link ApiGateway} コンストラクトを作成する
    * @param scope コンストラクトのスコープ
@@ -35,6 +47,9 @@ export class ApiGateway extends Construct {
    */
   constructor(scope: Construct, id: string, props: ApiGatewayProps) {
     super(scope, id);
+
+    this.layer = props.layer;
+    this.allowOrigin = props.allowOrigin;
 
     // API Gateway へのアクセスログを記録する CloudWatch Logs ロググループを作成する
     const apiLogGroup = new logs.LogGroup(this, 'RestApiLogGroup', {
@@ -65,7 +80,7 @@ export class ApiGateway extends Construct {
       cloudWatchRole: true, // CloudWatch Logs にログを出力するための IAM ロールを自動作成する
 
       defaultCorsPreflightOptions: {
-        allowOrigins: apigw.Cors.ALL_ORIGINS, // REST API への接続元 Origin に特別な制限を設けない (テスト用の設定)
+        allowOrigins: [this.allowOrigin], // REST API への接続元 Origin に特別な制限を設けない (テスト用の設定)
       },
 
       // REST API のデフォルト認証方法を Cognito 認証とする
@@ -80,9 +95,8 @@ export class ApiGateway extends Construct {
    * ワークフローに関する情報を取得する API を作成する
    * `GET /workflows/{workflowType}`
    * `GET /workflows/{workflowType}/{workflowId}`
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addWorkflowsApi(layer: lambda.ILayerVersion) {
+  addWorkflowsApi() {
     // API を実装した Lambda 関数を作成する
     const workflowsApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowsApiFunction', {
       // エントリポイントとなる index.py が存在するディレクトリの相対パスを指定
@@ -100,10 +114,11 @@ export class ApiGateway extends Construct {
 
       // Lambda 関数が必要とする環境変数の設定
       environment: {
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
       // Lambda 関数が利用するレイヤーの設定
-      layers: [layer],
+      layers: [this.layer],
 
       // 実行タイムアウトを 30 秒に設定
       timeout: cdk.Duration.seconds(30),
@@ -133,9 +148,8 @@ export class ApiGateway extends Construct {
    * `GET /workflows/{workflowType}/{workflowId}/visualizers`
    * `GET /workflows/{workflowType}/{workflowId}/visualizers/{visualizerId}`
    * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addWorkflowVisualizersApi(dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+  addWorkflowVisualizersApi(dynamoDb: DynamoDb) {
     // API を実装した Lambda 関数を作成する
     const workflowVisualizersApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowVisualizersApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowVisualizersApi'),
@@ -147,9 +161,10 @@ export class ApiGateway extends Construct {
 
       environment: {
         DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: dynamoDb.workflowVisualizersTable.tableName,
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -171,9 +186,8 @@ export class ApiGateway extends Construct {
    * @param s3BucketForOutput ワークフローの出力を格納する S3 バケット
    * @param workflowRunner Step Functions ステートマシンを作成するコンストラクト
    * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addStartAnalysisApi(s3BucketForOutput: s3.IBucket, omicsWorkflowRunRole: iam.IRole, workflowRunner: WorkflowRunner, dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+  addStartAnalysisApi(s3BucketForOutput: s3.IBucket, omicsWorkflowRunRole: iam.IRole, workflowRunner: WorkflowRunner, dynamoDb: DynamoDb) {
     // API を実装した Lambda 関数を作成する
     const startAnalysisApiFunction = new lambdaPython.PythonFunction(this, 'StartAnalysisApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/StartAnalysisApi'),
@@ -189,9 +203,10 @@ export class ApiGateway extends Construct {
         STEPFUNCTIONS_STATE_MACHINE_ARN: workflowRunner.stateMachine.stateMachineArn,
         DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: dynamoDb.workflowVisualizersTable.tableName,
         STAGE_NAME: cdk.Stage.of(this)?.stageName ?? '',
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -215,9 +230,8 @@ export class ApiGateway extends Construct {
    * ワークフローの実行に関する情報を取得する API を作成する
    * `GET /runs`
    * `GET /runs/{runId}`
-   * @param layer Lambda 関数が利用する Lambda レイヤー
   */
-  addRunsApi(layer: lambda.ILayerVersion) {
+  addRunsApi() {
     // API を実装した Lambda 関数を作成する
     const runsApiFunction = new lambdaPython.PythonFunction(this, 'RunsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunsApi'),
@@ -228,9 +242,10 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -256,9 +271,8 @@ export class ApiGateway extends Construct {
    * ワークフロー実行のタスクに関する情報を取得する API を作成する
    * `GET /runs/{runId}/tasks`
    * `GET /runs/{runId}/tasks/{taskId}`
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addRunTasksApi(layer: lambda.ILayerVersion) {
+  addRunTasksApi() {
     // API を実装した Lambda 関数を作成する
     const runTasksApiFunction = new lambdaPython.PythonFunction(this, 'RunTasksApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunTasksApi'),
@@ -269,9 +283,10 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -297,9 +312,8 @@ export class ApiGateway extends Construct {
   /**
    * タスクの実行ログを取得する API を作成する
    * `GET /runs/{runId}/tasks/{taskId}/log`
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addTaskLogApi(layer: lambda.ILayerVersion) {
+  addTaskLogApi() {
     // API を実装した Lambda 関数を作成する
     const taskLogApiFunction = new lambdaPython.PythonFunction(this, 'TaskLogApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/TaskLogApi'),
@@ -310,9 +324,10 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -342,9 +357,8 @@ export class ApiGateway extends Construct {
   /**
    * ワークフローの出力ファイルを取得する API を作成する
    * `GET /runs/{runId}/outputs`
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addRunOutputsApi(layer: lambda.ILayerVersion) {
+  addRunOutputsApi() {
     // API を実装した Lambda 関数を作成する
     const runOutputsApiFunction = new lambdaPython.PythonFunction(this, 'RunOutputsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunOutputsApi'),
@@ -355,9 +369,10 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -385,9 +400,8 @@ export class ApiGateway extends Construct {
   /**
    * ワークフロー実行結果を削除する API を作成する
    * `DELETE /runs/{runId}`
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addDeleteRunApi(layer: lambda.ILayerVersion) {
+  addDeleteRunApi() {
     // API を実装した Lambda 関数を作成する
     const deleteRunApiFunction = new lambdaPython.PythonFunction(this, 'DeleteRunApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/DeleteRunApi'),
@@ -398,9 +412,10 @@ export class ApiGateway extends Construct {
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -423,9 +438,8 @@ export class ApiGateway extends Construct {
    * `GET /runs/{runId}/visualizations`
    * `GET /runs/{runId}/visualizations/{visualizationId}`
    * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addRunVisualizationsApi(dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+  addRunVisualizationsApi(dynamoDb: DynamoDb) {
     // API を実装した Lambda 関数を作成する
     const runVisualizationsApiFunction = new lambdaPython.PythonFunction(this, 'RunVisualizationsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunVisualizationsApi'),
@@ -437,9 +451,10 @@ export class ApiGateway extends Construct {
 
       environment: {
         DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS: dynamoDb.runVisualizationsTable.tableName,
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE
@@ -462,9 +477,8 @@ export class ApiGateway extends Construct {
    * @param quickSightUserNamespace QuickSight ユーザーの名前空間
    * @param cognito Cognito ユーザープールを構築する CDK コンストラクト
    * @param dynamoDb DynamoDB テーブルを作成するコンストラクト
-   * @param layer Lambda 関数が利用する Lambda レイヤー
    */
-  addVisualizationDashboardApi(quickSightIdentityRegion: string, quickSightUserNamespace: string, cognito: Cognito, dynamoDb: DynamoDb, layer: lambda.ILayerVersion) {
+  addVisualizationDashboardApi(quickSightIdentityRegion: string, quickSightUserNamespace: string, cognito: Cognito, dynamoDb: DynamoDb) {
     // API を実装した Lambda 関数を作成する
     const visualizationDashboardApiFunction = new lambdaPython.PythonFunction(this, 'VisualizationDashboardApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/VisualizationDashboardApi'),
@@ -479,9 +493,10 @@ export class ApiGateway extends Construct {
         QUICKSIGHT_USER_NAMESPACE: quickSightUserNamespace,
         QUICKSIGHT_FEDERATION_ROLE_NAME: cognito.quickSightFederationRole!.roleName,
         DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS: dynamoDb.runVisualizationsTable.tableName,
+        CORS_ALLOW_ORIGIN: this.allowOrigin,
       },
 
-      layers: [layer],
+      layers: [this.layer],
 
       timeout: cdk.Duration.seconds(30),
       tracing: lambda.Tracing.ACTIVE

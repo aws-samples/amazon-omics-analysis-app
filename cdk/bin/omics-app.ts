@@ -3,6 +3,7 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 
 import { OmicsAnalysisAppStack } from '../lib/omics-analysis-app-stack';
+import { AlphaFold3DmolVisualizerStack } from '../lib/alphafold-3dmol-visualizer-stack';
 
 const app = new cdk.App();
 
@@ -37,3 +38,15 @@ const omicsAnalysisAppStack = new OmicsAnalysisAppStack(scope, 'OmicsAnalysisApp
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
+
+// AlphaFold の 3Dmol による可視化を作成する
+const alphaFold3DmolVisualizerStack = new AlphaFold3DmolVisualizerStack(scope, 'AlphaFold3DmolVisualizerStack', {
+  dynamoDb: omicsAnalysisAppStack.dynamoDb,
+
+  env: {
+    region: 'us-east-1',
+  },
+});
+
+// OmicsAnalysisAppStack を作成した後に AlphaFold3DmolVisualizerStack が作成されるように、依存関係を設定する
+alphaFold3DmolVisualizerStack.addDependency(omicsAnalysisAppStack);

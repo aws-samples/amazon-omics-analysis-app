@@ -104,5 +104,6 @@ export type RunVisualization = {
   runId: string;
   visualizationId: string;
   type: string;
-  dashboardId: string;
+  dashboardId?: string;
+  pdbPath?: string;
 };

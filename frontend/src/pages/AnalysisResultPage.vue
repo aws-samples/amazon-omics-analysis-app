@@ -20,7 +20,9 @@ import { useI18n } from 'vue-i18n';
 import DisplayBasicInfo from 'src/components/analysis/DisplayBasicInfo.vue';
 import TaskTimelineChart from 'src/components/analysis/TaskTimelineChart.vue';
 import TableTask from 'src/components/analysis/TableTask.vue';
+
 import VisualizationQuickSightDashboard from 'src/components/analysis/VisualizationQuickSightDashboard.vue';
+import VisualizationThreedMol from 'src/components/analysis/Visualization3dMol.vue';
 
 import TreeOutputs from 'src/components/analysis/TreeOutputs.vue';
 import CardInfomation from 'src/components/common/CardInfomation.vue';
@@ -80,6 +82,12 @@ const searchRun = async () => {
 const allDashboards = computed(() =>
   allRunVisualizations.value?.filter(
     visualization => visualization.type === 'QuickSightDashboard'
+  ) ?? []
+);
+
+const allThreeDMols = computed(() =>
+  allRunVisualizations.value?.filter(
+    visualization => visualization.type === '3Dmol'
   ) ?? []
 );
 
@@ -193,13 +201,22 @@ const onClickReRun = () => {
           <display-basic-info :value="resAnalysis" :readonly="true" />
         </card-infomation>
 
-        <!-- ダッシュボード -->
+        <!-- QuickSight ダッシュボード -->
         <card-infomation v-for="dashboard in allDashboards"
           class="col-12"
           :key="dashboard.dashboardId"
           :title="$t('analysis.result.dashboard.title')"
         >
           <visualization-quick-sight-dashboard :run-id="dashboard.runId" :visualization-id="dashboard.visualizationId"/>
+        </card-infomation>
+
+        <!-- 3Dmol -->
+        <card-infomation v-for="threeDMol in allThreeDMols"
+          class="col-12"
+          :key="threeDMol.pdbPath"
+          :title="threeDMol.pdbPath ?? ''"
+        >
+          <visualization-threed-mol :run-visualization="threeDMol"/>
         </card-infomation>
 
         <!-- Output一覧 -->

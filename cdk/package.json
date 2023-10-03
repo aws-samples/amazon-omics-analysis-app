@@ -20,6 +20,7 @@
     "typescript": "~4.9.5"
   },
   "dependencies": {
+    "@aws-cdk/aws-glue-alpha": "2.92.0-alpha.0",
     "@aws-cdk/aws-lambda-python-alpha": "2.92.0-alpha.0",
     "aws-cdk-lib": "2.92.0",
     "constructs": "^10.0.0",

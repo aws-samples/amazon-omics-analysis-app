@@ -130,7 +130,7 @@ def handle_list_objects(bucket: str, rootPrefix: str, path: str, queryParams: di
         'contents': [{
             'path': content['Key'][len(rootPrefix):],
             'size': content['Size'],
-        } for content in contents] if contents else [],
+        } for content in contents if content['Size'] > 0] if contents else [],
         'folders': [{
             'path': commonPrefix['Prefix'][len(rootPrefix):],
         } for commonPrefix in commonPrefixes] if commonPrefixes else [],

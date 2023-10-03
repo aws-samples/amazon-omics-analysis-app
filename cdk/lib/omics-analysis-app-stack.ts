@@ -50,6 +50,8 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: OmicsAnalysisAppStackProps) {
     super(scope, id, props);
 
+    const stageName = cdk.Stage.of(this)?.stageName;
+
     // Lambda 関数が共通で利用するライブラリをまとめた Lambda レイヤーを作成する
     this.commonLayer = new lambdaPython.PythonLayerVersion(this, 'CommonLayer', {
       // 依存ライブラリを定義した requirements.txt が存在する相対パスを指定
@@ -100,9 +102,10 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
       // バケットへのアクセスに SSL を必須にする
       enforceSSL: true,
     });
-    // ワークフロー実行結果の出力先バケットの S3 URI を CloudFormation スタックの出力に追加
-    new cdk.CfnOutput(this, "WorkflowOutputBucketURI", {
-      value: s3BucketForOutput.s3UrlForObject(),
+    // ワークフロー実行結果の出力先バケットの ARN を CloudFormation スタックの出力に追加
+    new cdk.CfnOutput(this, "WorkflowOutputBucketArn", {
+      value: s3BucketForOutput.bucketArn,
+      exportName: `${stageName ?? ''}OmicsWorkflowOutputBucketArn`,
     });
 
     // Step Functions による追加処理の結果を保存する DynamoDB テーブルを作成する
@@ -116,8 +119,6 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
     new cdk.CfnOutput(this, "DynamoDbRunVisualizationsTableName", {
       value: this.dynamoDb.runVisualizationsTable.tableName,
     });
-
-    const stageName = cdk.Stage.of(this)?.stageName;
 
     // Omics ワークフローを実行するための IAM ロールを作成する
     const omicsWorkflowRunRole = new iam.Role(this, 'OmicsWorkflowRunRole', {

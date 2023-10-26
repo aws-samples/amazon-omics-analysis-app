@@ -1,8 +1,11 @@
-# AWS HealthOmics Analysis App
-
-## 日本語の解説記事は[こちら](https://prototyping-blog.com/blog/aws-healthomics-analysis-app)
-
 [日本語版](README.ja.md)
+
+## 日本語の解説記事
+
+- [AWS HealthOmics と Step Functions でオミクスデータ分析ワークフローを構築する](https://prototyping-blog.com/blog/aws-healthomics-analysis-app)
+- [AWS HealthOmics で AlphaFold を実行し、タンパク質の立体構造を可視化する](https://prototyping-blog.com/blog/aws-healthomics-analysis-app-alphafold/)
+
+# AWS HealthOmics Analysis App
 
 This repository contains the following codes.
 

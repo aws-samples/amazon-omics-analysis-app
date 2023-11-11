@@ -20,7 +20,7 @@
     "3dmol": "^2.0.5",
     "amazon-quicksight-embedding-sdk": "^2.0.0",
     "aws-amplify": "^5.3.4",
-    "axios": "^1.2.1",
+    "axios": "^1.6.0",
     "dayjs": "^1.11.7",
     "echarts": "^5.4.1",
     "lodash": "^4.17.21",

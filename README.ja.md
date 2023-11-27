@@ -1,3 +1,8 @@
+## 解説記事
+
+- [AWS HealthOmics と Step Functions でオミクスデータ分析ワークフローを構築する](https://prototyping-blog.com/blog/aws-healthomics-analysis-app)
+- [AWS HealthOmics で AlphaFold を実行し、タンパク質の立体構造を可視化する](https://prototyping-blog.com/blog/aws-healthomics-analysis-app-alphafold/)
+
 # AWS HealthOmics Analysis App
 
 このリポジトリには以下のコードが含まれています。

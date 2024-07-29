@@ -19,7 +19,7 @@
     "@vueuse/core": "^9.13.0",
     "3dmol": "^2.0.5",
     "amazon-quicksight-embedding-sdk": "^2.0.0",
-    "aws-amplify": "^5.3.4",
+    "aws-amplify": "^6.4.3",
     "axios": "^1.6.0",
     "dayjs": "^1.11.7",
     "echarts": "^5.4.1",

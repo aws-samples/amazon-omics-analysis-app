@@ -124,7 +124,7 @@ const donwload = async (openInNewTab = false) => {
           </div>
           <div class="col-auto">
             <span class="text-caption q-mr-md">{{
-              humanFileSize(item.size, true, 1)
+              humanFileSize(item.size ?? 0, true, 1)
             }}</span>
 
             <q-btn

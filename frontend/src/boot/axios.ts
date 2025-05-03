@@ -1,7 +1,7 @@
 import { boot } from 'quasar/wrappers';
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { Auth } from 'aws-amplify';
 import { Notify } from 'quasar';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -28,10 +28,10 @@ const apiWithoutErrorHandling = axios.create({
 
 const requestHandler = async (config: InternalAxiosRequestConfig) => {
   // Cognitoの認証情報を取得して、RequestヘッダにIDトークンを設定する
-  const user = await Auth.currentAuthenticatedUser();
-  if (user) {
-    const token = (await Auth.currentSession()).getIdToken().getJwtToken();
-    config.headers['Authorization'] = token;
+  const session = await fetchAuthSession();
+  const token = session.tokens?.idToken;
+  if (token != null) {
+    config.headers['Authorization'] = token.toString();
   }
   return config;
 };

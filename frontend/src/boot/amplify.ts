@@ -5,10 +5,10 @@ import AmplifyVue from '@aws-amplify/ui-vue';
 
 Amplify.configure({
   Auth: {
-    region: import.meta.env.VITE_AUTH_REGION,
-    userPoolId: import.meta.env.VITE_AUTH_USER_POOL_ID,
-    userPoolWebClientId: import.meta.env.VITE_AUTH_WEB_CLIENT_ID,
-    authenticationFlowType: 'USER_SRP_AUTH',
+    Cognito: {
+      userPoolId: import.meta.env.VITE_AUTH_USER_POOL_ID,
+      userPoolClientId: import.meta.env.VITE_AUTH_WEB_CLIENT_ID,
+    },
   },
 });
 

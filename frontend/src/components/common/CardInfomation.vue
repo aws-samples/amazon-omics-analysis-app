@@ -10,9 +10,6 @@ defineProps<{
   title: string;
   onRefresh?: () => void;
 }>();
-defineEmits<{
-  refresh: () => void;
-}>();
 </script>
 
 <template>

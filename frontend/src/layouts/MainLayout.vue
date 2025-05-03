@@ -2,10 +2,11 @@
 import { defineComponent, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ListMenu, { ListMenuProps } from '../components/common/ListMenu.vue';
-import { Auth } from 'aws-amplify';
+import { useAuthenticator } from '@aws-amplify/ui-vue';
 import { useRouter } from 'vue-router';
 
 const { t } = useI18n();
+const auth = useAuthenticator();
 const router = useRouter();
 
 const menuList: ListMenuProps[] = [
@@ -26,7 +27,7 @@ const toggleLeftDrawer = () => {
 };
 
 const signOut = () => {
-  Auth.signOut();
+  auth.signOut();
 };
 
 defineComponent({

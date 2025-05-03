@@ -36,14 +36,12 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
     const workflowOutputBucket = s3.Bucket.fromBucketArn(this, 'WorkflowOutputBucket', workflowOutputBucketArn);
 
     // AlphaFold の実行結果を展開する Glue python shell ジョブを作成する
-    const extractResultsJob = new glue.Job(this, 'ExtractResultsJob', {
+    const extractResultsJob = new glue.PythonShellJob(this, 'ExtractResultsJob', {
       jobName: `${stageName ?? ''}AlphaFoldExtractResultsJob`,
       // Job で利用する実行環境とソースコードの場所の指定
-      executable: glue.JobExecutable.pythonShell({
-        glueVersion: glue.GlueVersion.V2_0,
-        pythonVersion: glue.PythonVersion.THREE_NINE,
-        script: glue.Code.fromAsset(path.join(__dirname, '../../visualizer/glue/AlphaFoldExtractResultsJob/index.py')),
-      }),
+      glueVersion: glue.GlueVersion.V2_0,
+      pythonVersion: glue.PythonVersion.THREE_NINE,
+      script: glue.Code.fromAsset(path.join(__dirname, '../../visualizer/glue/AlphaFoldExtractResultsJob/index.py')),
 
       // ジョブが利用する各種リソースをコマンドライン引数として設定
       defaultArguments: {
@@ -52,8 +50,16 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
 
       // Job の実行で利用する DPU (Data Processing Unit) の最大数
       maxCapacity: 1,
+
+      role: new iam.Role(this, 'ExtractResultsJobRole', {
+        roleName: `${stageName ?? ''}AlphaFoldExtractResultsJobRole`,
+        assumedBy: new iam.ServicePrincipal('glue.amazonaws.com'),
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSGlueServiceRole'),
+          iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'),
+        ],
+      }),
     });
-    extractResultsJob.role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
     workflowOutputBucket.grantReadWrite(extractResultsJob);
     props.dynamoDb.runVisualizationsTable.grantReadWriteData(extractResultsJob);
 

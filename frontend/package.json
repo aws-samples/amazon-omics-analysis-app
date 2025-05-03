@@ -14,7 +14,7 @@
     "test:unit:ci": "vitest run"
   },
   "dependencies": {
-    "@aws-amplify/ui-vue": "^3.1.9",
+    "@aws-amplify/ui-vue": "^4.3.2",
     "@quasar/extras": "^1.0.0",
     "@vueuse/core": "^9.13.0",
     "3dmol": "^2.0.5",

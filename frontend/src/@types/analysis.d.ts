@@ -30,7 +30,7 @@ export type WorkflowParameterDefinition = {
   optional: boolean;
 };
 
-export type ParameterValue = string | number | boolean | null;
+export type ParameterValue = string | number | boolean | object | (string | number | boolean | object)[] | null;
 
 export type Analysis = {
   status: string;

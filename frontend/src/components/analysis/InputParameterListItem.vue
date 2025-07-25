@@ -82,7 +82,16 @@ if (paramType === 'boolean') {
 
 // Valueを表示用にパースする
 const parseValue = (value: ParameterValue): string | null => {
-  return value !== null ? String(value) : null;
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value;
+  } else if (typeof value === 'object') {
+    return JSON.stringify(value);
+  } else {
+    return String(value);
+  }
 };
 
 // データ型に合わせてCastする
@@ -97,8 +106,14 @@ const castValue = (val: ParameterValue): ParameterValue => {
     return Number.parseInt(val?.toString() ?? '');
   } else if (paramType === 'boolean') {
     return 'true' === val;
+  } else {
+    const str = String(val);
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      return str;
+    }
   }
-  return String(val);
 };
 
 // 変更用のハンドラーが未設定の場合はReadOnlyとする

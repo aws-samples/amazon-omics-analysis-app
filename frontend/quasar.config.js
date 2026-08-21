@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 /*
  * This file runs in a Node context (it's NOT transpiled by Babel), so use only
  * the ES6 features that are supported by your Node version. https://node.green/
@@ -13,15 +11,6 @@ const path = require('path');
 
 module.exports = configure(function (/* ctx */) {
   return {
-    eslint: {
-      // fix: true,
-      // include = [],
-      // exclude = [],
-      // rawOptions = {},
-      warnings: true,
-      errors: true,
-    },
-
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
 
@@ -50,6 +39,12 @@ module.exports = configure(function (/* ctx */) {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
+      env: {
+        // @quasar/app-vite v3 はデフォルトで QCLI_ プレフィックスの変数のみ
+        // クライアントコードに公開するため、従来の VITE_ プレフィックスを許可する
+        clientPrefix: 'VITE_',
+      },
+
       target: {
         browser: ['es2019', 'edge88', 'firefox78', 'chrome87', 'safari13.1'],
         node: 'node16',
@@ -57,6 +52,15 @@ module.exports = configure(function (/* ctx */) {
       // Vite＋aws-sdkを利用時にエラーになるため、aliasの設定を追加
       alias: {
         './runtimeConfig': './runtimeConfig.browser',
+        // @quasar/app-vite v3 で組み込みのエイリアス (src, layouts, pages 等) が
+        // 廃止されたため明示的に定義
+        src: path.resolve(__dirname, './src'),
+        components: path.resolve(__dirname, './src/components'),
+        layouts: path.resolve(__dirname, './src/layouts'),
+        pages: path.resolve(__dirname, './src/pages'),
+        assets: path.resolve(__dirname, './src/assets'),
+        boot: path.resolve(__dirname, './src/boot'),
+        stores: path.resolve(__dirname, './src/stores'),
       },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
@@ -80,7 +84,7 @@ module.exports = configure(function (/* ctx */) {
 
       vitePlugins: [
         [
-          '@intlify/vite-plugin-vue-i18n',
+          '@intlify/unplugin-vue-i18n/vite',
           {
             // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
             // compositionOnly: false,

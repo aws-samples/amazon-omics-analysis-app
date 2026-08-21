@@ -53,7 +53,7 @@ const categoriesList = computed(() => {
   Object.keys(props.parameterDefs).forEach((key) => {
     const description: ParameterDescription = {
       caption: props.parameterDefs[key].description,
-    }
+    };
     const { category, item } = description;
 
     // カテゴリ番号と項目番号が未設定の場合は0とする
@@ -91,7 +91,7 @@ const categoriesList = computed(() => {
     prevCateogry = cateogry.category;
     temp.push(cateogry);
   });
-  if (temp.length > 0 ) {
+  if (temp.length > 0) {
     ret.push([...temp]);
   }
 

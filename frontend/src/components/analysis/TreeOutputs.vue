@@ -28,7 +28,7 @@ const outputNode = ref<OutputItem[]>([]);
     });
     outputNode.value.push(
       ...(outputs?.folders ?? []),
-      ...(outputs?.contents ?? []),
+      ...(outputs?.contents ?? [])
     );
   } finally {
     loading.value = false;

@@ -83,20 +83,114 @@ export type GetRunVisualizationsResponse = {
   nextToken?: string;
 };
 
+/**
+ * ワークフロー一覧を取得
+ * @param workflowType ワークフロー種別
+ * @param startingToken ページング処理用トークン
+ * @returns ワークフロー一覧
+ */
+const getWorkflows = async (
+  workflowType: WorkflowType,
+  startingToken?: string
+) => {
+  const response = await api.get<GetWorkflowsResponse>(
+    `/workflows/${workflowType}`,
+    {
+      params: {
+        ...(startingToken && { startingToken: startingToken }),
+      },
+    }
+  );
+  return response.data;
+};
+
+/**
+ * ワークフローで実行可能な可視化一覧を取得
+ * @param workflowType ワークフロー種別
+ * @param workflowId ワークフローID
+ * @param startingToken ページング処理用トークン
+ * @returns ワークフローの可視化一覧
+ */
+const getWorkflowVisualizers = async (
+  workflowType: WorkflowType,
+  workflowId: string,
+  startingToken?: string
+) => {
+  const response = await api.get<GetWorkflowVisualizersResponse>(
+    `/workflows/${workflowType}/${workflowId}/visualizers`,
+    {
+      params: {
+        ...(startingToken && { startingToken: startingToken }),
+      },
+    }
+  );
+  return response.data;
+};
+
+/**
+ * ワークフローの実行一覧を取得
+ * @param startingToken ページング処理用トークン
+ * @returns 実行一覧
+ */
+const getRuns = async (startingToken?: string) => {
+  const response = await api.get<GetRunsResponse>('/runs', {
+    params: {
+      ...(startingToken && { startingToken: startingToken }),
+    },
+  });
+  return response.data;
+};
+
+/**
+ * 指定された実行のタスク一覧を取得
+ * @param runId 実行 ID
+ * @param startingToken ページング処理用トークン
+ * @returns タスク一覧
+ */
+const getTasks = async (runId: string, startingToken?: string) => {
+  const response = await api.get<GetTasksResponse>(`/runs/${runId}/tasks`, {
+    params: {
+      ...(startingToken && { startingToken: startingToken }),
+    },
+  });
+  return response.data;
+};
+
+/**
+ * 指定された実行の可視化一覧の取得
+ * @param runId 実行 ID
+ * @param startingToken ページング処理用トークン
+ * @returns 実行の可視化一覧
+ */
+const getRunVisualizations = async (runId: string, startingToken?: string) => {
+  const response = await api.get<GetRunVisualizationsResponse>(
+    `/runs/${runId}/visualizations`,
+    {
+      params: {
+        ...(startingToken && { startingToken: startingToken }),
+      },
+    }
+  );
+  return response.data;
+};
+
 const useAnalysis = () => {
   return {
+    getRuns,
+
     /**
-     * ワークフローの実行一覧を取得
-     * @param startingToken ページング処理用トークン
-     * @returns 実行一覧
+     * ワークフローの実行一覧を全件取得(ページング処理込み)
+     * @returns 実行一覧(全件)
      */
-    getRuns: async (startingToken?: string) => {
-      const response = await api.get<GetRunsResponse>('/runs', {
-        params: {
-          ...(startingToken && { startingToken: startingToken }),
-        },
-      });
-      return response.data;
+    getAllRuns: async () => {
+      const items: Analysis[] = [];
+      let startingToken: string | undefined = undefined;
+      do {
+        const response: GetRunsResponse = await getRuns(startingToken);
+        items.push(...response.items);
+        startingToken = response.nextToken;
+      } while (startingToken);
+      return items;
     },
 
     /**
@@ -109,21 +203,26 @@ const useAnalysis = () => {
       return response.data;
     },
 
-    /**
-     * 指定された実行のタスク一覧を取得
-     * @param runId 実行 ID
-     * @param startingToken ページング処理用トークン
-     * @returns タスク一覧
-     */
-    getTasks: async (runId: string, startingToken?: string) => {
-      const response = await api.get<GetTasksResponse>(`/runs/${runId}/tasks`, {
-        params: {
-          ...(startingToken && { startingToken: startingToken }),
-        },
-      });
-      return response.data;
-    },
+    getTasks,
 
+    /**
+     * 指定された実行のタスク一覧を全件取得(ページング処理込み)
+     * @param runId 実行 ID
+     * @returns タスク一覧(全件)
+     */
+    getAllTasks: async (runId: string) => {
+      const items: AnalysisTask[] = [];
+      let startingToken: string | undefined = undefined;
+      do {
+        const response: GetTasksResponse = await getTasks(runId, startingToken);
+        if (!response.items) {
+          break;
+        }
+        items.push(...response.items);
+        startingToken = response.nextToken;
+      } while (startingToken);
+      return items;
+    },
     /**
      * 指定されたタスクの実行ログを取得
      * @param runId 実行 ID
@@ -131,16 +230,23 @@ const useAnalysis = () => {
      * @param option オプション
      * @returns 実行ログ
      */
-    getTaskLog: async (runId: string, taskId: string, option: GetTaskLogOption = {
-      startFromHead: true,
-      limit: 10000,
-      unmask: false,
-    }) => {
-      const response = await api.get<GetTaskLogResponse>(`/runs/${runId}/tasks/${taskId}/log`, {
-        params: {
-          ...option,
-        },
-      });
+    getTaskLog: async (
+      runId: string,
+      taskId: string,
+      option: GetTaskLogOption = {
+        startFromHead: true,
+        limit: 10000,
+        unmask: false,
+      }
+    ) => {
+      const response = await api.get<GetTaskLogResponse>(
+        `/runs/${runId}/tasks/${taskId}/log`,
+        {
+          params: {
+            ...option,
+          },
+        }
+      );
       return response.data;
     },
 
@@ -151,18 +257,26 @@ const useAnalysis = () => {
      * @param option オプション
      * @returns 出力ファイル一覧
      */
-    getOutputs: async (runId: string, path: string, option: GetRunOutputsOption = {
-      mode: 'flat',
-      maxKeys: 1000,
-    }): Promise<GetRunOutputsResponse | undefined> => {
+    getOutputs: async (
+      runId: string,
+      path: string,
+      option: GetRunOutputsOption = {
+        mode: 'flat',
+        maxKeys: 1000,
+      }
+    ): Promise<GetRunOutputsResponse | undefined> => {
       try {
-        const response = await apiWithoutErrorHandling.get<GetRunOutputsResponse>(`/runs/${runId}/outputs/${path}`, {
-          params: {
-            ...option,
-          },
-        });
+        const response =
+          await apiWithoutErrorHandling.get<GetRunOutputsResponse>(
+            `/runs/${runId}/outputs/${path}`,
+            {
+              params: {
+                ...option,
+              },
+            }
+          );
         return response.data;
-      } catch(err) {
+      } catch (err) {
         // 404エラーの場合はエラー処理しない
         if (err instanceof AxiosError && err.response?.status === 404) {
           return undefined;
@@ -189,7 +303,7 @@ const useAnalysis = () => {
      * ワークフローの実行結果を削除
      * @param id 実行 ID
      */
-    deleteRun: async(runId: string) => {
+    deleteRun: async (runId: string) => {
       await api.delete<void>(`/runs/${runId}`);
     },
 
@@ -203,19 +317,25 @@ const useAnalysis = () => {
       return response.data;
     },
 
+    getWorkflows,
+
     /**
-     * ワークフロー一覧を取得
+     * ワークフロー一覧を全件取得(ページング処理込み)
      * @param workflowType ワークフロー種別
-     * @param startingToken ページング処理用トークン
-     * @returns ワークフロー一覧
+     * @returns ワークフロー一覧(全件)
      */
-    getWorkflows: async (workflowType: WorkflowType, startingToken?: string) => {
-      const response = await api.get<GetWorkflowsResponse>(`/workflows/${workflowType}`, {
-        params: {
-          ...(startingToken && { startingToken: startingToken }),
-        },
-      });
-      return response.data;
+    getAllWorkflows: async (workflowType: WorkflowType) => {
+      const items: Workflow[] = [];
+      let startingToken: string | undefined = undefined;
+      do {
+        const response: GetWorkflowsResponse = await getWorkflows(
+          workflowType,
+          startingToken
+        );
+        items.push(...response.items);
+        startingToken = response.nextToken;
+      } while (startingToken);
+      return items;
     },
 
     /**
@@ -224,11 +344,16 @@ const useAnalysis = () => {
      * @param workflowId ワークフローID
      * @returns ワークフローの詳細情報
      */
-    getWorkflow: async (workflowType: WorkflowType, workflowId: string): Promise<Workflow | undefined> => {
+    getWorkflow: async (
+      workflowType: WorkflowType,
+      workflowId: string
+    ): Promise<Workflow | undefined> => {
       try {
-        const response = await apiWithoutErrorHandling.get<Workflow>(`/workflows/${workflowType}/${workflowId}`);
+        const response = await apiWithoutErrorHandling.get<Workflow>(
+          `/workflows/${workflowType}/${workflowId}`
+        );
         return response.data;
-      } catch(err) {
+      } catch (err) {
         // 404エラーの場合はエラー処理しない
         if (err instanceof AxiosError && err.response?.status === 404) {
           return undefined;
@@ -237,20 +362,27 @@ const useAnalysis = () => {
       }
     },
 
+    getWorkflowVisualizers,
+
     /**
-     * ワークフローで実行可能な可視化一覧を取得
+     * ワークフローで実行可能な可視化一覧を全件取得(ページング処理込み)
      * @param workflowType ワークフロー種別
      * @param workflowId ワークフローID
-     * @param startingToken ページング処理用トークン
-     * @returns ワークフローの可視化一覧
+     * @returns ワークフローの可視化一覧(全件)
      */
-    getWorkflowVisualizers: async (workflowType: WorkflowType, workflowId: string, startingToken?: string) => {
-      const response = await api.get<GetWorkflowVisualizersResponse>(`/workflows/${workflowType}/${workflowId}/visualizers`, {
-        params: {
-          ...(startingToken && { startingToken: startingToken }),
-        },
-      });
-      return response.data;
+    getAllWorkflowVisualizers: async (
+      workflowType: WorkflowType,
+      workflowId: string
+    ) => {
+      const items: WorkflowVisualizer[] = [];
+      let startingToken: string | undefined = undefined;
+      do {
+        const response: GetWorkflowVisualizersResponse =
+          await getWorkflowVisualizers(workflowType, workflowId, startingToken);
+        items.push(...response.items);
+        startingToken = response.nextToken;
+      } while (startingToken);
+      return items;
     },
 
     /**
@@ -260,24 +392,37 @@ const useAnalysis = () => {
      * @param visualizerId 可視化ID
      * @returns ワークフローの可視化の詳細情報
      */
-    getWorkflowVisualizer: async (workflowType: WorkflowType, workflowId: string, visualizerId: string) => {
-      const response = await api.get<WorkflowVisualizer>(`/workflows/${workflowType}/${workflowId}/visualizers/${visualizerId}`);
+    getWorkflowVisualizer: async (
+      workflowType: WorkflowType,
+      workflowId: string,
+      visualizerId: string
+    ) => {
+      const response = await api.get<WorkflowVisualizer>(
+        `/workflows/${workflowType}/${workflowId}/visualizers/${visualizerId}`
+      );
       return response.data;
     },
 
+    getRunVisualizations,
+
     /**
-     * 指定された実行の可視化一覧の取得
+     * 指定された実行の可視化一覧を全件取得(ページング処理込み)
      * @param runId 実行 ID
-     * @param startingToken ページング処理用トークン
-     * @returns 実行の可視化一覧
+     * @returns 実行の可視化一覧(全件)
      */
-    getRunVisualizations: async (runId: string, startingToken?: string) => {
-      const response = await api.get<GetRunVisualizationsResponse>(`/runs/${runId}/visualizations`, {
-        params: {
-          ...(startingToken && { startingToken: startingToken }),
-        },
-      });
-      return response.data;
+    getAllRunVisualizations: async (runId: string) => {
+      const items: RunVisualization[] = [];
+      let startingToken: string | undefined = undefined;
+      do {
+        const response: GetRunVisualizationsResponse =
+          await getRunVisualizations(runId, startingToken);
+        if (!response.items) {
+          break;
+        }
+        items.push(...response.items);
+        startingToken = response.nextToken;
+      } while (startingToken);
+      return items;
     },
 
     /**
@@ -287,7 +432,9 @@ const useAnalysis = () => {
      * @returns ダッシュボード埋め込み用 URL
      */
     getDashboardUrl: async (runId: string, visualizationId: string) => {
-      const response = await api.get<string>(`/runs/${runId}/visualizations/${visualizationId}/dashboard`);
+      const response = await api.get<string>(
+        `/runs/${runId}/visualizations/${visualizationId}/dashboard`
+      );
       return response.data;
     },
   };

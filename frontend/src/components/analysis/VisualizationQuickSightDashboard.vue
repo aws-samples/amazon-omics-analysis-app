@@ -28,7 +28,10 @@ onMounted(async () => {
     const { embedDashboard } = await createEmbeddingContext();
 
     // ダッシュボード埋め込み用のQuickSightのURLを取得
-    dashboardUrl.value = await analysis.getDashboardUrl(props.runId, props.visualizationId);
+    dashboardUrl.value = await analysis.getDashboardUrl(
+      props.runId,
+      props.visualizationId
+    );
 
     // SDKを利用してダッシュボードを埋め込む
     await embedDashboard(

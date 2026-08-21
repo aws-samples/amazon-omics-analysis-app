@@ -89,7 +89,10 @@ if (isRerun.value) {
     try {
       $q.loading.show();
       rerunAnalysis.value = await analysis.getRun(runId);
-      const workflow = await analysis.getWorkflow(rerunAnalysis.value.workflowType, rerunAnalysis.value.workflowId);
+      const workflow = await analysis.getWorkflow(
+        rerunAnalysis.value.workflowType,
+        rerunAnalysis.value.workflowId
+      );
 
       // 取得したデータを画面に反映する
       if (rerunAnalysis.value && workflow) {
@@ -112,7 +115,10 @@ const copyWorkflowParametersFromTemplate = async () => {
   const workflow = settings.value.workflow;
   if (workflow) {
     // ワークフローの詳細を取得
-    const detailedWorkflow = await analysis.getWorkflow(workflow.type, workflow.id);
+    const detailedWorkflow = await analysis.getWorkflow(
+      workflow.type,
+      workflow.id
+    );
     if (detailedWorkflow) {
       // パラメーターの定義を設定
       parameterDefs.value = detailedWorkflow.parameterTemplate;

@@ -110,7 +110,7 @@ const castValue = (val: ParameterValue): ParameterValue => {
     const str = String(val);
     try {
       return JSON.parse(str);
-    } catch (e) {
+    } catch {
       return str;
     }
   }

@@ -22,7 +22,11 @@ const emit = defineEmits<{
 // props.nameとKeyが一致したスキーマ情報でValidationを行う
 // 以下の設定を行うことで、VeeValidateがValidationを実行できるようになる
 const nameRef = toRef(props, 'name');
-const { errorMessage, value } = useField<ValueType>(nameRef);
+// vee-validate v4.10以降はmodelValueの自動追跡(syncVModel)が
+// デフォルト無効のため、明示的に有効化する
+const { errorMessage, value } = useField<ValueType>(nameRef, undefined, {
+  syncVModel: true,
+});
 </script>
 
 <template>

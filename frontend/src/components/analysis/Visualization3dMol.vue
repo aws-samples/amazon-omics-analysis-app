@@ -30,7 +30,11 @@ onMounted(async () => {
 
     if (props.runVisualization.pdbPath) {
       // PDB ファイルをダウンロードするための URL を取得する
-      const url = await analysis.getOutputUrl(props.runVisualization.runId, props.runVisualization.pdbPath, false);
+      const url = await analysis.getOutputUrl(
+        props.runVisualization.runId,
+        props.runVisualization.pdbPath,
+        false
+      );
       await $3Dmol.download(`url: ${url}`, viewer, {});
     }
 

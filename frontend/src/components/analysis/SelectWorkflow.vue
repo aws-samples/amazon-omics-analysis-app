@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Workflow, WorkflowType } from 'src/@types/analysis';
-import useAnalysis, { GetWorkflowsResponse } from 'src/services/useAnalysis';
+import useAnalysis from 'src/services/useAnalysis';
 import { useField } from 'vee-validate';
 import { defineComponent, ref, toRef, watch } from 'vue';
 import _ from 'lodash';
@@ -34,15 +34,10 @@ const loadWorkflows = async (
     return;
   }
 
-  let allWorkflows: Workflow[] = [];
-  let startingToken: string | undefined = undefined;
-  do {
-    const workflows: GetWorkflowsResponse = await analysis.getWorkflows(props.workflowType, startingToken);
-    allWorkflows.push(...workflows.items);
-    startingToken = workflows.nextToken;
-  } while (startingToken);
-
-  allWorkflows = _.sortBy(allWorkflows, workflow => workflow.name);
+  const allWorkflows = _.sortBy(
+    await analysis.getAllWorkflows(props.workflowType),
+    (workflow) => workflow.name
+  );
 
   update(() => {
     workflowOptions.value = allWorkflows;
@@ -52,14 +47,23 @@ const loadWorkflows = async (
 // props.nameとKeyが一致したスキーマ情報でValidationを行う
 // 以下の設定を行うことで、VeeValidateがValidationを実行できるようになる
 const nameRef = toRef(props, 'name');
-const { errorMessage, value } = useField<Workflow | undefined>(nameRef);
+// vee-validate v4.10以降はmodelValueの自動追跡(syncVModel)が
+// デフォルト無効のため、明示的に有効化する
+const { errorMessage, value } = useField<Workflow | undefined>(
+  nameRef,
+  undefined,
+  { syncVModel: true }
+);
 
-watch(() => props.workflowType, () => {
-  if (!props.readonly) {
-    value.value = undefined;
-    workflowOptions.value = undefined;
+watch(
+  () => props.workflowType,
+  () => {
+    if (!props.readonly) {
+      value.value = undefined;
+      workflowOptions.value = undefined;
+    }
   }
-});
+);
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { WorkflowVisualizer, Workflow } from 'src/@types/analysis';
-import useAnalysis, { GetWorkflowVisualizersResponse } from 'src/services/useAnalysis';
+import useAnalysis from 'src/services/useAnalysis';
 import { useField } from 'vee-validate';
 import { defineComponent, ref, toRef, watch } from 'vue';
 import _ from 'lodash';
@@ -34,15 +34,13 @@ const loadVisualizers = async (
     return;
   }
 
-  let allVisualizers: WorkflowVisualizer[] = [];
-  let startingToken: string | undefined = undefined;
-  do {
-    const visualizers: GetWorkflowVisualizersResponse = await analysis.getWorkflowVisualizers(props.workflow.type, props.workflow.id, startingToken);
-    allVisualizers.push(...visualizers.items);
-    startingToken = visualizers.nextToken;
-  } while (startingToken);
-
-  allVisualizers = _.sortBy(allVisualizers, visualizer => visualizer.name);
+  const allVisualizers = _.sortBy(
+    await analysis.getAllWorkflowVisualizers(
+      props.workflow.type,
+      props.workflow.id
+    ),
+    (visualizer) => visualizer.name
+  );
 
   update(() => {
     visualizerOptions.value = allVisualizers;
@@ -52,14 +50,23 @@ const loadVisualizers = async (
 // props.nameとKeyが一致したスキーマ情報でValidationを行う
 // 以下の設定を行うことで、VeeValidateがValidationを実行できるようになる
 const nameRef = toRef(props, 'name');
-const { errorMessage, value } = useField<WorkflowVisualizer | undefined>(nameRef);
+// vee-validate v4.10以降はmodelValueの自動追跡(syncVModel)が
+// デフォルト無効のため、明示的に有効化する
+const { errorMessage, value } = useField<WorkflowVisualizer | undefined>(
+  nameRef,
+  undefined,
+  { syncVModel: true }
+);
 
-watch(() => props.workflow, () => {
-  if (!props.readonly) {
-    value.value = undefined;
-    visualizerOptions.value = undefined;
+watch(
+  () => props.workflow,
+  () => {
+    if (!props.readonly) {
+      value.value = undefined;
+      visualizerOptions.value = undefined;
+    }
   }
-});
+);
 </script>
 
 <template>

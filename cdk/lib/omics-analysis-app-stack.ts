@@ -6,7 +6,7 @@ import * as lambdaPython from '@aws-cdk/aws-lambda-python-alpha';
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as iam from 'aws-cdk-lib/aws-iam';
 
-import { NodejsBuild } from 'deploy-time-build';
+import { NodejsBuild } from '@cdklabs/deploy-time-build';
 import * as path from 'path';
 
 import { Cognito } from './constructs/backend-cognito';
@@ -298,7 +298,7 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
       },
 
       // ビルドを実行する Node.js のバージョンを指定
-      nodejsVersion: 18,
+      nodejsVersion: 22,
 
       // ビルドを実行するためのコマンド
       buildCommands: [

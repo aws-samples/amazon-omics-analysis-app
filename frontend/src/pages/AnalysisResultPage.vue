@@ -11,9 +11,10 @@ import {
   ParameterValue,
   Workflow,
   RunVisualization,
+  WorkflowVisualizer,
 } from 'src/@types/analysis';
 import FormSettings from '../components/analysis/FormSettings.vue';
-import useAnalysis, { GetTasksResponse } from 'src/services/useAnalysis';
+import useAnalysis from 'src/services/useAnalysis';
 import _ from 'lodash';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
@@ -55,40 +56,52 @@ const id = _.isArray(route.params['id'])
 const resAnalysis = ref<Analysis>();
 const workflow = ref<Workflow | undefined>();
 const allRunVisualizations = ref<RunVisualization[]>();
+const visualizer = ref<WorkflowVisualizer | undefined>();
 
 const searchRun = async () => {
   try {
     // Analysisの基本情報を取得する際に各操作を行うと不整合が起こる可能性があるので、画面全体をローディング表示にする
     $q.loading.show();
     resAnalysis.value = await analysis.getRun(id);
-    workflow.value = await analysis.getWorkflow(resAnalysis.value.workflowType, resAnalysis.value.workflowId);
+    const { workflowType, workflowId } = resAnalysis.value;
+    workflow.value = await analysis.getWorkflow(workflowType, workflowId);
+    allRunVisualizations.value = await analysis.getAllRunVisualizations(id);
 
-    let startingToken: string | undefined = undefined;
-    allRunVisualizations.value = [];
-    do {
-      const runVisualizations = await analysis.getRunVisualizations(id);
-      if (runVisualizations.items) {
-        allRunVisualizations.value.push(...runVisualizations.items);
-        startingToken = runVisualizations.nextToken;
-      } else {
-        break;
-      }
-    } while(startingToken);
+    // 実行時に使われたVisualizerを特定する
+    // 実行結果自体はvisualizerIdを保持していないため、実行の可視化一覧の
+    // visualizationId (「{visualizerId}_{ファイル名}」形式) と
+    // ワークフローのVisualizer一覧を突き合わせて逆引きする
+    visualizer.value = undefined;
+    if (allRunVisualizations.value.length > 0) {
+      const allVisualizers = await analysis.getAllWorkflowVisualizers(
+        workflowType,
+        workflowId
+      );
+      visualizer.value = allVisualizers.find((v) =>
+        allRunVisualizations.value?.some(
+          (visualization) =>
+            visualization.visualizationId === v.visualizerId ||
+            visualization.visualizationId.startsWith(`${v.visualizerId}_`)
+        )
+      );
+    }
   } finally {
     $q.loading.hide();
   }
 };
 
-const allDashboards = computed(() =>
-  allRunVisualizations.value?.filter(
-    visualization => visualization.type === 'QuickSightDashboard'
-  ) ?? []
+const allDashboards = computed(
+  () =>
+    allRunVisualizations.value?.filter(
+      (visualization) => visualization.type === 'QuickSightDashboard'
+    ) ?? []
 );
 
-const allThreeDMols = computed(() =>
-  allRunVisualizations.value?.filter(
-    visualization => visualization.type === '3Dmol'
-  ) ?? []
+const allThreeDMols = computed(
+  () =>
+    allRunVisualizations.value?.filter(
+      (visualization) => visualization.type === '3Dmol'
+    ) ?? []
 );
 
 (async () => {
@@ -101,23 +114,11 @@ const allTasks = ref<AnalysisTask[]>([]);
 
 // タスク一覧の検索
 const searchTasks = async () => {
-  let startingToken: string | undefined = undefined;
   loadingTasks.value = true;
   errorTasks.value = false;
   allTasks.value = [];
   try {
-    do {
-      const tasks: GetTasksResponse = await analysis.getTasks(
-        id,
-        startingToken
-      );
-      if (tasks.items) {
-        allTasks.value.push(...tasks.items);
-        startingToken = tasks.nextToken;
-      } else {
-        break;
-      }
-    } while (startingToken);
+    allTasks.value = await analysis.getAllTasks(id);
   } catch {
     errorTasks.value = true;
   } finally {
@@ -135,6 +136,7 @@ const settings = computed<AnalysisSettings>(() => {
     priority: resAnalysis.value?.priority ?? 0,
     workflowType: resAnalysis.value?.workflowType ?? 'READY2RUN',
     workflow: workflow.value,
+    visualizer: visualizer.value,
   };
 });
 
@@ -202,21 +204,26 @@ const onClickReRun = () => {
         </card-infomation>
 
         <!-- QuickSight ダッシュボード -->
-        <card-infomation v-for="dashboard in allDashboards"
+        <card-infomation
+          v-for="dashboard in allDashboards"
           class="col-12"
           :key="dashboard.dashboardId"
           :title="$t('analysis.result.dashboard.title')"
         >
-          <visualization-quick-sight-dashboard :run-id="dashboard.runId" :visualization-id="dashboard.visualizationId"/>
+          <visualization-quick-sight-dashboard
+            :run-id="dashboard.runId"
+            :visualization-id="dashboard.visualizationId"
+          />
         </card-infomation>
 
         <!-- 3Dmol -->
-        <card-infomation v-for="threeDMol in allThreeDMols"
+        <card-infomation
+          v-for="threeDMol in allThreeDMols"
           class="col-12"
           :key="threeDMol.pdbPath"
           :title="threeDMol.pdbPath ?? ''"
         >
-          <visualization-threed-mol :run-visualization="threeDMol"/>
+          <visualization-threed-mol :run-visualization="threeDMol" />
         </card-infomation>
 
         <!-- Output一覧 -->

@@ -1,15 +1,5 @@
-const analysisItem = {
-  name: 'Name',
-  creationTime: 'Creation Time',
-  startTime: 'Start Time',
-  stopTime: 'Stop Time',
-  executionTime: 'Execution Time',
-  status: 'Status',
-  arn: 'ARN',
-  priority: 'Priority',
-  storageCapacity: 'Storage Capacity',
-};
-
+// NOTE: @intlify/unplugin-vue-i18n のプリコンパイルは静的な
+// `export default {...}` のみサポートするため、変数参照は使わないこと
 export default {
   appName: 'AWS HealthOmics Analysis App',
   signout: 'SignOut',
@@ -43,20 +33,20 @@ export default {
       basic: {
         title: 'Info',
         params: {
-          name: analysisItem.name,
-          status: analysisItem.status,
-          arn: analysisItem.arn,
-          creationTime: analysisItem.creationTime,
-          startTime: analysisItem.startTime,
-          stopTime: analysisItem.stopTime,
+          name: 'Name',
+          status: 'Status',
+          arn: 'ARN',
+          creationTime: 'Creation Time',
+          startTime: 'Start Time',
+          stopTime: 'Stop Time',
         },
       },
       setting: {
         title: 'Settings',
         params: {
           name: 'Analysis Name',
-          storageCapacity: analysisItem.storageCapacity,
-          priority: analysisItem.priority,
+          storageCapacity: 'Storage Capacity',
+          priority: 'Priority',
           roleArn: 'IAM Role ARN',
           logLevel: 'Log Level',
           workflowType: 'Workflow Type',
@@ -133,12 +123,12 @@ export default {
     list: {
       title: 'Analysis List',
       listTableLabel: {
-        status: analysisItem.status,
-        name: analysisItem.name,
-        executionTime: analysisItem.executionTime,
-        creationTime: analysisItem.creationTime,
-        startTime: analysisItem.startTime,
-        stopTime: analysisItem.stopTime,
+        status: 'Status',
+        name: 'Name',
+        executionTime: 'Execution Time',
+        creationTime: 'Creation Time',
+        startTime: 'Start Time',
+        stopTime: 'Stop Time',
       },
     },
     result: {
@@ -146,14 +136,14 @@ export default {
       task: {
         title: 'Tasks',
         listTableLabel: {
-          status: analysisItem.status,
+          status: 'Status',
           name: 'Task Name',
-          executionTime: analysisItem.executionTime,
+          executionTime: 'Execution Time',
           vcpu: 'vCPU',
           memory: 'Memory(GiB)',
           gpu: 'GPU',
-          startTime: analysisItem.startTime,
-          stopTime: analysisItem.stopTime,
+          startTime: 'Start Time',
+          stopTime: 'Stop Time',
         },
       },
       dashboard: {

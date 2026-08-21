@@ -1,4 +1,4 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { Notify } from 'quasar';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -36,7 +36,7 @@ const requestHandler = async (config: InternalAxiosRequestConfig) => {
   return config;
 };
 
-export default boot(({}) => {
+export default defineBoot(() => {
   // Requestの前処理
   api.interceptors.request.use(requestHandler);
   apiWithoutErrorHandling.interceptors.request.use(requestHandler);

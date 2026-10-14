@@ -21,7 +21,7 @@
     "3dmol": "^2.0.5",
     "amazon-quicksight-embedding-sdk": "^2.0.0",
     "aws-amplify": "^6.20.0",
-    "axios": "^1.18.0",
+    "axios": "^1.20.0",
     "dayjs": "^1.11.7",
     "echarts": "^6.1.0",
     "lodash": "^4.17.23",

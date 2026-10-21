@@ -49,4 +49,4 @@ const alphaFold3DmolVisualizerStack = new AlphaFold3DmolVisualizerStack(scope, '
 });
 
 // OmicsAnalysisAppStack を作成した後に AlphaFold3DmolVisualizerStack が作成されるように、依存関係を設定する
-alphaFold3DmolVisualizerStack.addDependency(omicsAnalysisAppStack);
+alphaFold3DmolVisualizerStack.addStackDependency(omicsAnalysisAppStack);

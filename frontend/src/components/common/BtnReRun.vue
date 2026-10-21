@@ -14,10 +14,6 @@ defineEmits<{
     :label="$t('btn.reRun')"
     color="primary"
     icon="autorenew"
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

@@ -17,10 +17,6 @@ defineEmits<{
 <template>
   <q-btn
     :label="iconOnly ? '' : label"
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

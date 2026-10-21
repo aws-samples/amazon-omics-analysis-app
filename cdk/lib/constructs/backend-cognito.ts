@@ -108,8 +108,8 @@ export class Cognito extends Construct {
       const cognitoPostConfirmationTriggerFunction = new lambdaPython.PythonFunction(this, 'PostConfirmationFunction', {
         // エントリポイントとなる index.py が存在するディレクトリの相対パスを指定
         entry: path.join(__dirname, '../../../backend/lambda/functions/Cognito/PostConfirmationTrigger'),
-        // 利用するランタイムとして Python 3.9 を指定
-        runtime: lambda.Runtime.PYTHON_3_9,
+        // 利用するランタイムとして Python 3.14 を指定
+        runtime: lambda.Runtime.PYTHON_3_14,
         // 利用するアーキテクチャとして x64_64 を指定
         architecture: lambda.Architecture.X86_64,
 
@@ -157,7 +157,7 @@ export class Cognito extends Construct {
       // Cognito ユーザープールの「認証後トリガー」として登録する Lambda 関数
       const cognitoPostAuthenticationTriggerFunction = new lambdaPython.PythonFunction(this, 'PostAuthenticationFunction', {
         entry: path.join(__dirname, '../../../backend/lambda/functions/Cognito/PostAuthenticationTrigger'),
-        runtime: lambda.Runtime.PYTHON_3_9,
+        runtime: lambda.Runtime.PYTHON_3_14,
         architecture: lambda.Architecture.X86_64,
 
         environment: {

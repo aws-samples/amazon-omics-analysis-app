@@ -85,7 +85,7 @@ export class CloudFront extends Construct {
 
       defaultBehavior: {
         // 配信元の S3 バケットを指定
-        origin: new origins.S3Origin(this.assetBucket, {
+        origin: origins.S3BucketOrigin.withOriginAccessIdentity(this.assetBucket, {
           originAccessIdentity: originAccessIdentity,
         }),
         // HTTP によるアクセスは HTTPS にリダイレクトする

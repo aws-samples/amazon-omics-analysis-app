@@ -56,8 +56,8 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
     this.commonLayer = new lambdaPython.PythonLayerVersion(this, 'CommonLayer', {
       // 依存ライブラリを定義した requirements.txt が存在する相対パスを指定
       entry: path.resolve(__dirname, '../../backend/lambda/layers/Common'),
-      // 対応するランタイムとして Python 3.9 を指定
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+      // 対応するランタイムとして Python 3.14 を指定
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_14],
       // 対応するアーキテクチャとして x64_64 を指定
       compatibleArchitectures: [lambda.Architecture.X86_64]
     });
@@ -298,7 +298,7 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
       },
 
       // ビルドを実行する Node.js のバージョンを指定
-      nodejsVersion: 22,
+      nodejsVersion: 24,
 
       // ビルドを実行するためのコマンド
       buildCommands: [

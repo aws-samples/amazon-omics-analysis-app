@@ -33,7 +33,7 @@ export class WorkflowRunner extends Construct {
     // Omics のワークフローを実行する Step Functions タスクを実装した Lambda 関数を作成する
     const omicsStartRunTaskFunction = new lambdaPython.PythonFunction(this, 'OmicsStartRunTaskFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/StepFunctions/StartRunTask'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -91,7 +91,7 @@ export class WorkflowRunner extends Construct {
     // Omics ワークフローの実行状況を取得する Step Functions タスクを実装した Lambda 関数を作成する
     const omicsGetRunStatusTaskFunction = new lambdaPython.PythonFunction(this, 'OmicsGetRunStatusTaskFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/StepFunctions/GetRunStatusTask'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -123,7 +123,7 @@ export class WorkflowRunner extends Construct {
     // ワークフロー完了時のメール通知を行う Step Functions タスクを実装した Lambda 関数を作成する
     const notificationTaskFunction = new lambdaPython.PythonFunction(this, 'NotificationTaskFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/StepFunctions/NotificationTask'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -330,7 +330,8 @@ export class WorkflowRunner extends Construct {
     // ワークフローの前処理や後処理を実行する Step Functions ステートマシンを作成する
     this.stateMachine = new sfn.StateMachine(this, 'StateMachine', {
       stateMachineName: `${stageName ?? ''}OmicsWorkflowRunner`,
-      definition: checkOmicsStartRunTask
+      definitionBody: sfn.DefinitionBody.fromChainable(
+        checkOmicsStartRunTask
         .when(sfn.Condition.isNotPresent('$.OmicsStartRun'),
           checkOmicsRunTask
           .when(sfn.Condition.isPresent('$.OmicsRun'),
@@ -379,7 +380,8 @@ export class WorkflowRunner extends Construct {
               )
             )
           )
-        ),
+        )
+      ),
       tracingEnabled: true, // AWS X-Ray によるトレースを有効化する
     });
   }

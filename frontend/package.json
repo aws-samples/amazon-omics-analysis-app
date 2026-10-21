@@ -19,14 +19,14 @@
     "@vue/devtools-api": "^8.1.5",
     "@vueuse/core": "^14.4.0",
     "3dmol": "^2.0.5",
-    "amazon-quicksight-embedding-sdk": "^2.0.0",
+    "amazon-quicksight-embedding-sdk": "^2.12.1",
     "aws-amplify": "^6.20.0",
     "axios": "^1.20.0",
     "dayjs": "^1.11.7",
     "echarts": "^6.1.0",
     "lodash": "^4.17.23",
     "pinia": "^4.0.3",
-    "quasar": "^2.35.1",
+    "quasar": "^2.35.2",
     "vee-validate": "^4.8.3",
     "vue": "^3.5.44",
     "vue-echarts": "^8.1.0",
@@ -35,7 +35,7 @@
     "yup": "^1.0.2"
   },
   "devDependencies": {
-    "@intlify/unplugin-vue-i18n": "^11.2.5",
+    "@intlify/unplugin-vue-i18n": "^11.2.7",
     "@quasar/app-vite": "^3.7.0",
     "@quasar/quasar-app-extension-testing": "^2.1.0",
     "@quasar/vite-plugin": "^2.0.0",
@@ -54,6 +54,11 @@
     "typescript-eslint": "^8.67.0",
     "vitest": "^5.0.0",
     "vue-eslint-parser": "^10.4.1"
+  },
+  "overrides": {
+    "amazon-quicksight-embedding-sdk": {
+      "uuid": "^11.1.1"
+    }
   },
   "engines": {
     "node": "^30 || ^28 || ^26 || ^24 || ^22.22.0",

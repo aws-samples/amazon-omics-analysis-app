@@ -14,10 +14,6 @@ defineEmits<{
     :label="$t('btn.add')"
     color="positive"
     icon="add"
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

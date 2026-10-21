@@ -101,8 +101,8 @@ export class ApiGateway extends Construct {
     const workflowsApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowsApiFunction', {
       // エントリポイントとなる index.py が存在するディレクトリの相対パスを指定
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowsApi'),
-      // 利用するランタイムとして Python 3.9 を指定
-      runtime: lambda.Runtime.PYTHON_3_9,
+      // 利用するランタイムとして Python 3.14 を指定
+      runtime: lambda.Runtime.PYTHON_3_14,
       // 利用するアーキテクチャとして x64_64 を指定
       architecture: lambda.Architecture.X86_64,
 
@@ -153,7 +153,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const workflowVisualizersApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowVisualizersApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowVisualizersApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -191,7 +191,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const startAnalysisApiFunction = new lambdaPython.PythonFunction(this, 'StartAnalysisApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/StartAnalysisApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -235,7 +235,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const runsApiFunction = new lambdaPython.PythonFunction(this, 'RunsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunsApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -276,7 +276,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const runTasksApiFunction = new lambdaPython.PythonFunction(this, 'RunTasksApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunTasksApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -317,7 +317,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const taskLogApiFunction = new lambdaPython.PythonFunction(this, 'TaskLogApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/TaskLogApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -362,7 +362,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const runOutputsApiFunction = new lambdaPython.PythonFunction(this, 'RunOutputsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunOutputsApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -405,7 +405,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const deleteRunApiFunction = new lambdaPython.PythonFunction(this, 'DeleteRunApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/DeleteRunApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -443,7 +443,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const runVisualizationsApiFunction = new lambdaPython.PythonFunction(this, 'RunVisualizationsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunVisualizationsApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,
@@ -482,7 +482,7 @@ export class ApiGateway extends Construct {
     // API を実装した Lambda 関数を作成する
     const visualizationDashboardApiFunction = new lambdaPython.PythonFunction(this, 'VisualizationDashboardApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/VisualizationDashboardApi'),
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
 
       // memorySize: 1024,

@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as sfnTasks from "aws-cdk-lib/aws-stepfunctions-tasks";
-import * as glue from '@aws-cdk/aws-glue-alpha';
+import * as glue from 'aws-cdk-lib/aws-glue';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -97,7 +97,7 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
       code: lambda.Code.fromInline(fs.readFileSync(path.join(__dirname, '../../visualizer/lambda/VisualizerRegistration/index.py'), 'utf8')),
       handler: 'index.handler',
 
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_14,
       architecture: lambda.Architecture.X86_64,
       environment: {
         DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: props.dynamoDb.workflowVisualizersTable.tableName,

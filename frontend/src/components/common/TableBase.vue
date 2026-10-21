@@ -10,13 +10,14 @@ defineComponent({
 });
 
 defineProps<{
+  rows?: readonly unknown[];
   error?: boolean;
   expandable?: boolean;
 }>();
 </script>
 
 <template>
-  <q-table>
+  <q-table :rows="rows ?? []">
     <template v-if="expandable" v-slot:header="props">
       <q-tr :props="props">
         <q-th auto-width />

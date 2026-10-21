@@ -42,7 +42,10 @@ onMounted(async () => {
         height: '700px',
         width: '100%',
         onChange: (changeEvent) => {
-          if (changeEvent.eventLevel === 'ERROR') {
+          if (
+            'eventLevel' in changeEvent &&
+            changeEvent.eventLevel === 'ERROR'
+          ) {
             console.log(
               `Do something when embedding experience failed with "${changeEvent.eventName}"`
             );

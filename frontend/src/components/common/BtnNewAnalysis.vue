@@ -14,10 +14,6 @@ defineEmits<{
     :label="$t('btn.newAnalysis')"
     color="primary"
     icon="auto_awesome"
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

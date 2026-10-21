@@ -14,10 +14,6 @@ defineEmits<{
     :label="$t('btn.delete')"
     color="negative"
     icon="delete"
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

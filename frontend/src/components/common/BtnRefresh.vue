@@ -13,10 +13,6 @@ defineEmits<{
   <q-btn
     icon="refresh"
     outline
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

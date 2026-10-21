@@ -3,7 +3,7 @@ import useAnalysis from 'src/services/useAnalysis';
 import { defineComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import * as $3Dmol from '3dmol/build/3Dmol-min.js';
+import * as $3Dmol from '3dmol';
 
 import BannerError from '../common/BannerError.vue';
 import { RunVisualization } from 'src/@types/analysis';

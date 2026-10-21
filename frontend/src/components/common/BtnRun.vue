@@ -14,10 +14,6 @@ defineEmits<{
     :label="$t('btn.run')"
     color="primary"
     icon="play_circle_outline"
-    @click="
-      ($event) => {
-        $emit('click', $event);
-      }
-    "
+    @click="$emit('click')"
   />
 </template>

@@ -28,13 +28,14 @@ quicksight = boto3.client('quicksight', region_name=QUICKSIGHT_IDENTITY_REGION)
 @logger.inject_lambda_context(log_event=True)
 def handler(event: dict, context: LambdaContext) -> dict:
     # Cognito から渡されたユーザー情報を取得する
+    triggerSource = event['triggerSource']
     userAttributes = event['request']['userAttributes']
     userId = userAttributes['sub']
     email = userAttributes['email']
 
     # ユーザーによるセルフサインアップ、または Azure AD などの外部 ID プロバイダーからのユーザー登録が完了した場合、ユーザーの情報を MySQL に登録する
     userStatus = userAttributes['cognito:user_status']
-    if userStatus == 'CONFIRMED' or userStatus == 'EXTERNAL_PROVIDER':
+    if triggerSource == 'PostConfirmation_ConfirmSignUp' and (userStatus == 'CONFIRMED' or userStatus == 'EXTERNAL_PROVIDER'):
         registerUserResponse = quicksight.register_user(
             IdentityType='IAM',
             Email=email,

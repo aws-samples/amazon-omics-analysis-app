@@ -1,0 +1,58 @@
+name: CDK Synth
+
+# Checks that the CDK code passes the TypeScript type check and that the CDK app can be synthesized
+# (including bundling of the Lambda functions and layer), when the CDK code or files referenced by CDK as assets change.
+on:
+  # Keep paths the same for pull_request and push
+  pull_request:
+    paths:
+      - "cdk/**"
+      # Lambda functions and layer (cdk/lib/constructs/*.ts, cdk/lib/omics-analysis-app-stack.ts)
+      - "backend/lambda/**"
+      # Frontend source code (NodejsBuild in cdk/lib/omics-analysis-app-stack.ts)
+      - "frontend/**"
+      # Glue job and Lambda function of the visualizer (cdk/lib/alphafold-3dmol-visualizer-stack.ts)
+      - "visualizer/**"
+      - ".github/workflows/cdk-synth.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cdk/**"
+      - "backend/lambda/**"
+      - "frontend/**"
+      - "visualizer/**"
+      - ".github/workflows/cdk-synth.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  synth:
+    # The Lambda layer is bundled in a container of the Lambda architecture, so use a runner of the same architecture (ARM64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: cdk/package-lock.json
+
+      - name: Install dependencies
+        working-directory: cdk
+        run: npm ci
+
+      - name: Type check
+        working-directory: cdk
+        run: npx tsc --noEmit
+
+      # Check that the CDK app can be synthesized, including bundling of the Lambda layer (hash-verified installation from uv.lock)
+      - name: Synthesize CDK app
+        working-directory: cdk
+        # Specify the Lambda architecture explicitly instead of relying on the default
+        run: npx cdk synth --quiet -c lambdaArchitecture=arm64

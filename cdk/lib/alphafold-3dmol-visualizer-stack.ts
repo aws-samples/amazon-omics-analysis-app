@@ -16,6 +16,9 @@ import { DynamoDb } from "./constructs/backend-dynamodb";
 export interface AlphaFold3DmolVisualizerStackProps extends cdk.StackProps {
   /** 前処理や後処理の結果を保存するための DynamoDB テーブル */
   dynamoDb: DynamoDb;
+
+  /** Lambda 関数のアーキテクチャ (デフォルトは ARM64) */
+  lambdaArchitecture?: lambda.Architecture;
 }
 
 /** AlphaFold の 3Dmol による可視化を構築する CDK スタック */
@@ -30,6 +33,9 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
     super(scope, id, props);
 
     const stageName = cdk.Stage.of(this)?.stageName;
+
+    // Lambda 関数のアーキテクチャ (デフォルトは ARM64)
+    const lambdaArchitecture = props.lambdaArchitecture ?? lambda.Architecture.ARM_64;
 
     // Omics ワークフローの実行結果の出力先となる S3 バケットを取得
     const workflowOutputBucketArn = cdk.Fn.importValue(`${stageName ?? ''}OmicsWorkflowOutputBucketArn`);
@@ -50,6 +56,9 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
 
       // Job の実行で利用する DPU (Data Processing Unit) の最大数
       maxCapacity: 1,
+
+      // Python shell ジョブでは継続ログを使わない (出力は /aws-glue/python-jobs/output と /aws-glue/python-jobs/error に記録される)
+      continuousLogging: { enabled: false },
 
       role: new iam.Role(this, 'ExtractResultsJobRole', {
         roleName: `${stageName ?? ''}AlphaFoldExtractResultsJobRole`,
@@ -84,7 +93,7 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
     // 可視化を実行するための Step Functions ステートマシンを作成する
     const stateMachine = new sfn.StateMachine(this, 'StateMachine', {
       stateMachineName: `${stageName ?? ''}AlphaFold3DmolVisualizer`,
-      definition: extractResultsTask,
+      definitionBody: sfn.DefinitionBody.fromChainable(extractResultsTask),
       tracingEnabled: true,
     });
     stateMachine.grantStartExecution(workflowRunnerRole);
@@ -98,7 +107,7 @@ export class AlphaFold3DmolVisualizerStack extends cdk.Stack {
       handler: 'index.handler',
 
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: lambdaArchitecture,
       environment: {
         DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: props.dynamoDb.workflowVisualizersTable.tableName,
       },

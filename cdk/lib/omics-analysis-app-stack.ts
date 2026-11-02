@@ -21,6 +21,11 @@ export interface OmicsAnalysisAppStackProps extends cdk.StackProps {
   /** フロントエンドとバックエンドへの接続を許可する IP アドレスの CIDR */
   ipv4Ranges?: string[];
   ipv6Ranges?: string[];
+  /** CloudFront の URL に加えて、バックエンドへの接続 (CORS) を許可する Origin (ローカル開発用) */
+  additionalAllowOrigins?: string[];
+
+  /** Lambda 関数と Lambda レイヤーのアーキテクチャ (デフォルトは ARM64) */
+  lambdaArchitecture?: lambda.Architecture;
 
   /** QuickSight のサインアップを行ったリージョン */
   quickSightIdentityRegion?: string;
@@ -52,14 +57,37 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
 
     const stageName = cdk.Stage.of(this)?.stageName;
 
+    /** 依存ライブラリのバージョンとハッシュを固定した uv.lock が存在する相対パス */
+    const commonLayerEntry = path.resolve(__dirname, '../../backend/lambda/layers/Common');
+    /** ローカル開発で作られるファイル。レイヤーに含めず、アセットのハッシュ計算からも除外する */
+    const commonLayerExcludes = ['.venv', '__pycache__', '.pytest_cache', '*.pyc'];
+    /** Lambda レイヤーのバンドル時に uv.lock から依存ライブラリをインストールする uv のバージョン
+     * .github/workflows/backend-dependency-check.yml の uv のバージョンと合わせる */
+    const UV_VERSION = '0.13.6';
+
+    // Lambda 関数と Lambda レイヤーのアーキテクチャ
+    const lambdaArchitecture = props.lambdaArchitecture ?? lambda.Architecture.ARM_64;
+
     // Lambda 関数が共通で利用するライブラリをまとめた Lambda レイヤーを作成する
     this.commonLayer = new lambdaPython.PythonLayerVersion(this, 'CommonLayer', {
-      // 依存ライブラリを定義した requirements.txt が存在する相対パスを指定
-      entry: path.resolve(__dirname, '../../backend/lambda/layers/Common'),
+      entry: commonLayerEntry,
       // 対応するランタイムとして Python 3.14 を指定
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_14],
-      // 対応するアーキテクチャとして x64_64 を指定
-      compatibleArchitectures: [lambda.Architecture.X86_64]
+      // 対応するアーキテクチャを指定 (レイヤーはこのアーキテクチャ向けにバンドルされるため、Lambda 関数のアーキテクチャと合わせる)
+      compatibleArchitectures: [lambdaArchitecture],
+      bundling: {
+        buildArgs: {
+          UV_VERSION: UV_VERSION,
+        },
+        assetExcludes: commonLayerExcludes,
+        // ローカルの .venv などの有無でレイヤーが再作成されないよう、除外ファイルを除いた内容からハッシュを計算する
+        assetHashType: cdk.AssetHashType.CUSTOM,
+        assetHash: cdk.FileSystem.fingerprint(commonLayerEntry, {
+          exclude: commonLayerExcludes,
+          // uv のバージョンとアーキテクチャが変わった場合はバンドルし直す必要があるため、ハッシュに含める
+          extraHash: `${UV_VERSION}:${lambdaArchitecture.name}`,
+        }),
+      },
     });
 
     // Cognito ユーザープールと関連リソースを作成
@@ -67,6 +95,7 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
       quickSightIdentityRegion: props.quickSightIdentityRegion,
       quickSightUserNamespace: props.quickSightUserNamespace,
       commonLayer: this.commonLayer,
+      architecture: lambdaArchitecture,
     });
 
     // Cognito ユーザープールのリージョンを CloudFormation スタックの出力に追加
@@ -183,6 +212,7 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
     // ワークフローに後処理や後処理を追加するための Step Functions ステートマシンを作成
     this.workflowRunner = new WorkflowRunner(this, 'WorkflowRunner', {
       commonLayer: this.commonLayer,
+      architecture: lambdaArchitecture,
     });
     // ステートマシンの実行ロールの ARN を CloudFormation スタックの出力に追加
     new cdk.CfnOutput(this, "WorkflowRunnerStateMachineRoleArn", {
@@ -219,8 +249,11 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
       value: this.cloudfront.accessLogBucket.s3UrlForObject(),
     });
 
+    /** フロントエンドからの接続を許可する Origin (先頭の CloudFront の URL が既定値) */
+    const allowOrigins = [this.cloudfront.url, ...(props.additionalAllowOrigins ?? [])];
+
     s3BucketForOutput.addCorsRule({
-      allowedOrigins: [this.cloudfront.url],
+      allowedOrigins: allowOrigins,
       allowedMethods: [s3.HttpMethods.GET],
     });
 
@@ -228,7 +261,8 @@ export class OmicsAnalysisAppStack extends cdk.Stack {
     this.apiGateway = new ApiGateway(this, 'ApiGateway', {
       userPool: this.cognito.userPool,
       layer: this.commonLayer,
-      allowOrigin: this.cloudfront.url,
+      architecture: lambdaArchitecture,
+      allowOrigins: allowOrigins,
     });
 
     // バックエンド API の URL を CloudFormation スタックの出力に追加

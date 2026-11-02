@@ -19,6 +19,8 @@ logs = boto3.client('logs')
 # CloudWatch Logs と X-Ray によるログとトレースを有効化
 @tracer.capture_lambda_handler
 @logger.inject_lambda_context(log_event=True)
+# リクエストの Origin に応じて CORS のレスポンスヘッダーを設定
+@api_common.cors
 def handler(event: dict, context: LambdaContext) -> dict:
     pathParams = event.get('pathParameters')
     # REST API に指定されたパスを取得
@@ -26,7 +28,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
         # パス情報がなければ 400 Bad Request とする
         return {
             'statusCode': 400,
-            'headers': api_common.CORS_HEADERS,
         }
 
     runId = pathParams.get('runId')
@@ -35,7 +36,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
         # パスに実行 ID とタスク ID が含まれていなければ 404 Not Found とする
         return {
             'statusCode': 404,
-            'headers': api_common.CORS_HEADERS,
         }
 
     # REST API に指定されたクエリ文字列を取得
@@ -56,7 +56,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
             'statusCode': statusCode,
             'headers': {
                 'Content-Type': 'application/json',
-                **api_common.CORS_HEADERS,
             },
             'body': json.dumps({
                 'code': code,
@@ -74,7 +73,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
             'statusCode': 400,
             'headers': {
                 'Content-Type': 'application/json',
-                **api_common.CORS_HEADERS,
             },
             'body': json.dumps({
                 'code': code,
@@ -130,7 +128,6 @@ def handle_get_run_task_log(runId: str, taskId: str, queryParams: dict) -> dict:
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
-            **api_common.CORS_HEADERS,
         },
         'body': json.dumps(responseBody, default=api_common.default_serializer),
     }

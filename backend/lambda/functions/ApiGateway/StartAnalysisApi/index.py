@@ -39,13 +39,14 @@ dynamodb = boto3.client('dynamodb')
 # CloudWatch Logs と X-Ray によるログとトレースを有効化
 @tracer.capture_lambda_handler
 @logger.inject_lambda_context(log_event=True)
+# リクエストの Origin に応じて CORS のレスポンスヘッダーを設定
+@api_common.cors
 def handler(event: dict, context: LambdaContext) -> dict:
     # REST API に指定されたリクエストボディを取得
     body = event.get('body')
     if not body:
         return {
             'statusCode': 400,
-            'headers': api_common.CORS_HEADERS,
         }
 
     # Cognito オーソライザーによってデコードされた JSON Web Token の Claim 情報から、ユーザーやグループの情報を取得する
@@ -74,7 +75,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
             'statusCode': statusCode,
             'headers': {
                 'Content-Type': 'application/json',
-                **api_common.CORS_HEADERS,
             },
             'body': json.dumps({
                 'code': code,
@@ -92,7 +92,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
             'statusCode': 400,
             'headers': {
                 'Content-Type': 'application/json',
-                **api_common.CORS_HEADERS,
             },
             'body': json.dumps({
                 'code': code,
@@ -125,7 +124,8 @@ def handle_start_analysis(userId: str, email: str, accountId: str, role: str, he
     }
 
     # ワークフロー実行完了メールの内容に反映するため、リクエストヘッダーから Origin と Accept-Language を取得
-    origin = headers['origin']
+    # メール本文のリンク先は、CORS で許可された Origin に限る
+    origin = api_common.allowed_origin(headers)
     acceptLanguage = headers['accept-language']
 
     # リクエストボディから Omics ワークフローの実行パラメーターを取得する
@@ -186,7 +186,6 @@ def handle_start_analysis(userId: str, email: str, accountId: str, role: str, he
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
-            **api_common.CORS_HEADERS,
         },
         'body': json.dumps(responseBody, default=api_common.default_serializer),
     }

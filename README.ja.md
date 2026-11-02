@@ -49,6 +49,7 @@
 - `allowdIPv4AddressRanges`: アプリケーションへのアクセスを許可する IPv4 アドレス
 - `allowdIPv6AddressRanges`: アプリケーションへのアクセスを許可する IPv6 アドレス
 - (これらの項目が無ければ、IP アドレス制限無しでデプロイされます)
+- `lambdaArchitecture`: Lambda 関数と Lambda レイヤーのアーキテクチャ。`arm64` または `x86_64` (省略時は `arm64`)
 
 設定例
 ```
@@ -97,3 +98,5 @@ OmicsAnalysisAppStackxxxx.FrontendURL = https://xxxx.cloudfront.net
 
 - [REST API 仕様](docs/api.ja.md)
 - [Step Functions ステートマシンの定義](docs/stepfunctions.ja.md)
+- [ローカル環境での開発](docs/development.ja.md)
+- [GitHub Actions について](docs/github.ja.md)

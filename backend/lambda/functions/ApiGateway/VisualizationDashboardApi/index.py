@@ -31,6 +31,8 @@ dynamodb = boto3.client('dynamodb')
 # CloudWatch Logs と X-Ray によるログとトレースを有効化
 @tracer.capture_lambda_handler
 @logger.inject_lambda_context(log_event=True)
+# リクエストの Origin に応じて CORS のレスポンスヘッダーを設定
+@api_common.cors
 def handler(event: dict, context: LambdaContext) -> dict:
     # REST API に指定されたパスとクエリ文字列を取得
     pathParams = event.get('pathParameters')
@@ -38,7 +40,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
         # パス情報がなければ 400 Bad Request とする
         return {
             'statusCode': 400,
-            'headers': api_common.CORS_HEADERS,
         }
 
     runId = pathParams.get('runId')
@@ -47,7 +48,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
         # パスに実行 ID と可視化 ID が含まれていなければ 404 Not Found とする
         return {
             'statusCode': 404,
-            'headers': api_common.CORS_HEADERS,
         }
 
     headers = event['headers']
@@ -71,7 +71,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
             'statusCode': statusCode,
             'headers': {
                 'Content-Type': 'application/json',
-                **api_common.CORS_HEADERS,
             },
             'body': json.dumps({
                 'code': code,
@@ -89,7 +88,6 @@ def handler(event: dict, context: LambdaContext) -> dict:
             'statusCode': 400,
             'headers': {
                 'Content-Type': 'application/json',
-                **api_common.CORS_HEADERS,
             },
             'body': json.dumps({
                 'code': code,
@@ -116,11 +114,11 @@ def handle_get_dashboard(accountId: str, userArn: str, runId: str, visualization
         # ダッシュボード ID が記録されていなければ 404 Not Found とする
         return {
             'statusCode': 404,
-            'headers': api_common.CORS_HEADERS,
         }
 
     # ユーザーに対応する QuickSight ユーザーの権限で、ダッシュボードを Web アプリに埋め込むための URL を取得して返す
-    origin = headers['origin']
+    # 埋め込みを許可するドメインは、CORS で許可された Origin に限る
+    origin = api_common.allowed_origin(headers)
     response = quicksight.generate_embed_url_for_registered_user(
         AwsAccountId=accountId,
         UserArn=userArn,
@@ -145,7 +143,6 @@ def handle_get_dashboard(accountId: str, userArn: str, runId: str, visualization
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
-            **api_common.CORS_HEADERS,
         },
         'body': embedUrl,
     }

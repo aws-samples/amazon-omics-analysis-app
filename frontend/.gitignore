@@ -2,6 +2,9 @@
 .thumbs.db
 node_modules
 
+# Environment variables for local development
+.env.local
+
 # Quasar core related directories
 .quasar
 /dist

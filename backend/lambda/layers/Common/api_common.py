@@ -1,4 +1,5 @@
 import os
+import functools
 import collections.abc as collections_abc
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -6,16 +7,44 @@ from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 # 複数の Lambda 関数で共通利用するヘルパー関数を集めたライブラリ
 
-# CORS の Allow-Origin を環境変数から取得
-CORS_ALLOW_ORIGIN = os.environ['CORS_ALLOW_ORIGIN']
+# CORS で許可する Origin の一覧を環境変数から取得 (カンマ区切りで複数指定可能)
+CORS_ALLOW_ORIGINS = [origin.strip() for origin in os.environ['CORS_ALLOW_ORIGINS'].split(',') if origin.strip()]
 
-# Cross-Origin Resource Sharing で REST API から返すレスポンスヘッダーの定義
+
+# リクエストヘッダーの値を、ヘッダー名の大文字小文字を区別せずに取得する
+def get_header(headers: dict | None, name: str) -> str | None:
+    name = name.lower()
+    for key, value in (headers or {}).items():
+        if key.lower() == name:
+            return value
+    return None
+
+
+# リクエストの Origin が許可されていればその Origin を、許可されていなければ既定の Origin を返す
+def allowed_origin(headers: dict | None) -> str:
+    origin = get_header(headers, 'origin')
+    # 先頭の Origin (CloudFront の URL) を、リクエストの Origin が一覧に無い場合の既定値とする
+    return origin if origin in CORS_ALLOW_ORIGINS else CORS_ALLOW_ORIGINS[0]
+
+
+# Lambda 関数のハンドラーが返すレスポンスに、Cross-Origin Resource Sharing (CORS) のレスポンスヘッダーを設定するデコレーター
 # https://developer.mozilla.org/ja/docs/Web/HTTP/CORS
-CORS_HEADERS = {
-    'Access-Control-Allow-Origin': CORS_ALLOW_ORIGIN,
-    'Access-Control-Allow-Methods': 'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD',
-    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-}
+# REST API の全ハンドラーに付けること。付けないとブラウザからの呼び出しが CORS エラーになる
+# Access-Control-Allow-Methods と Access-Control-Allow-Headers はプリフライト (OPTIONS) のレスポンスでのみ参照されるため、
+# プリフライトに応答する API Gateway 側 (cdk/lib/constructs/backend-apigateway.ts の defaultCorsPreflightOptions) で設定している
+def cors(handler):
+    @functools.wraps(handler)
+    def wrapper(event: dict, context) -> dict:
+        response = handler(event, context)
+        if isinstance(response, dict):
+            response['headers'] = {
+                **(response.get('headers') or {}),
+                'Access-Control-Allow-Origin': allowed_origin(event.get('headers')),
+                # Origin によってレスポンスが変わることをキャッシュに伝える
+                'Vary': 'Origin',
+            }
+        return response
+    return wrapper
 
 
 # json.loads() や json.dumps() で datetime や date 型を JSON 化できるようにするためのカスタムシリアライザー

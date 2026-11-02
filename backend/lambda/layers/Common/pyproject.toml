@@ -1,0 +1,22 @@
+[project]
+name = "omics-analysis-lambda"
+version = "0.0.0"
+description = "Dependencies for the AWS Lambda functions and layers of AWS HealthOmics Analysis App"
+
+requires-python = "==3.14.*"
+dependencies = [
+    "boto3",
+    "aws-lambda-powertools[all]",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "moto",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["layers/Common"]

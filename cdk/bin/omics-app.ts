@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 import { OmicsAnalysisAppStack } from '../lib/omics-analysis-app-stack';
 import { AlphaFold3DmolVisualizerStack } from '../lib/alphafold-3dmol-visualizer-stack';
@@ -20,6 +21,26 @@ const quickSightUserNamespace: string | undefined = app.node.tryGetContext('quic
 const ipv4Ranges: string[] | undefined = app.node.tryGetContext("allowdIPv4AddressRanges");
 const ipv6Ranges: string[] | undefined = app.node.tryGetContext("allowdIPv6AddressRanges");
 
+/** バックエンドへの接続 (CORS)　を許可する Origin */
+const additionalAllowOrigins = [
+  // ステージが dev の場合のみ、ローカル環境のフロントエンドからの接続を許可する
+  // frontend/quasar.config.js の devServer と合わせる
+  ...(stageName === 'dev' ? ['http://localhost:9000'] : []),
+];
+
+/** Lambda 関数と Lambda レイヤーのアーキテクチャ (`arm64` または `x86_64`) */
+let lambdaArchitecture: lambda.Architecture | undefined = undefined;
+
+const lambdaArchitectureName: string | undefined = app.node.tryGetContext('lambdaArchitecture');
+if (lambdaArchitectureName !== undefined) {
+  lambdaArchitecture = [lambda.Architecture.ARM_64, lambda.Architecture.X86_64].find(
+    (architecture) => architecture.name === lambdaArchitectureName,
+  );
+  if (!lambdaArchitecture) {
+    throw new Error(`Invalid context lambdaArchitecture: "${lambdaArchitectureName}". Specify "arm64" or "x86_64".`);
+  }
+}
+
 const scope: cdk.Stage | cdk.App = stageName ? new cdk.Stage(app, stageName) : app;
 
 // AWS HealthOmics Analysis App を作成する
@@ -29,6 +50,10 @@ const omicsAnalysisAppStack = new OmicsAnalysisAppStack(scope, 'OmicsAnalysisApp
 
   ipv4Ranges: ipv4Ranges,
   ipv6Ranges: ipv6Ranges,
+
+  additionalAllowOrigins: additionalAllowOrigins,
+
+  lambdaArchitecture: lambdaArchitecture,
 
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
@@ -42,6 +67,7 @@ const omicsAnalysisAppStack = new OmicsAnalysisAppStack(scope, 'OmicsAnalysisApp
 // AlphaFold の 3Dmol による可視化を作成する
 const alphaFold3DmolVisualizerStack = new AlphaFold3DmolVisualizerStack(scope, 'AlphaFold3DmolVisualizerStack', {
   dynamoDb: omicsAnalysisAppStack.dynamoDb,
+  lambdaArchitecture: lambdaArchitecture,
 
   env: {
     region: 'us-east-1',

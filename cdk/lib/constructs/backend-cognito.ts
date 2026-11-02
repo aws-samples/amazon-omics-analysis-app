@@ -13,6 +13,9 @@ export interface CognitoProps {
   quickSightIdentityRegion?: string;
   /** QuickSight ユーザーの名前空間 */
   quickSightUserNamespace?: string;
+
+  /** Lambda 関数のアーキテクチャ。Lambda 関数が利用する Lambda レイヤーのアーキテクチャと合わせる */
+  architecture: lambda.Architecture;
   /** Lambda 関数が共通で利用する Lambda レイヤー */
   commonLayer: lambda.ILayerVersion;
 }
@@ -110,8 +113,8 @@ export class Cognito extends Construct {
         entry: path.join(__dirname, '../../../backend/lambda/functions/Cognito/PostConfirmationTrigger'),
         // 利用するランタイムとして Python 3.14 を指定
         runtime: lambda.Runtime.PYTHON_3_14,
-        // 利用するアーキテクチャとして x64_64 を指定
-        architecture: lambda.Architecture.X86_64,
+        // 利用するアーキテクチャを指定
+        architecture: props.architecture,
 
         // 利用可能なメモリサイズをデフォルトの 128MB から変更したい場合に指定
         // memorySize: 1024,
@@ -158,7 +161,7 @@ export class Cognito extends Construct {
       const cognitoPostAuthenticationTriggerFunction = new lambdaPython.PythonFunction(this, 'PostAuthenticationFunction', {
         entry: path.join(__dirname, '../../../backend/lambda/functions/Cognito/PostAuthenticationTrigger'),
         runtime: lambda.Runtime.PYTHON_3_14,
-        architecture: lambda.Architecture.X86_64,
+        architecture: props.architecture,
 
         environment: {
           AWS_ACCOUNT_ID: cdk.Stack.of(this).account,

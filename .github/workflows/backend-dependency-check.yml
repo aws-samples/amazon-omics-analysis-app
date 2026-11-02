@@ -1,0 +1,37 @@
+name: Backend Dependency Check
+
+# Checks that uv.lock is consistent with pyproject.toml when the Lambda dependencies change.
+# Bundling of the layer by CDK is checked in cdk-synth.yml.
+on:
+  pull_request:
+    paths:
+      - "backend/lambda/**"
+      - ".github/workflows/backend-dependency-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/lambda/**"
+      - ".github/workflows/backend-dependency-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          # Keep in sync with UV_VERSION in cdk/lib/omics-analysis-app-stack.ts
+          version: "0.13.6"
+
+      # Check that uv.lock matches the contents of pyproject.toml
+      - name: Check uv.lock
+        working-directory: backend/lambda/layers/Common
+        run: uv lock --check

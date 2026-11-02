@@ -25,5 +25,12 @@
     "aws-cdk-lib": "2.274.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
+  },
+  "allowScripts": {
+    "@parcel/watcher": false,
+    "unrs-resolver": false
+  },
+  "engines": {
+    "npm": ">= 11.10.0"
   }
 }

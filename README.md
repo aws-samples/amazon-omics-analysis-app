@@ -51,6 +51,7 @@ Edit [cdk.json](../cdk/cdk.json) as needed.
 - `allowdIPv4AddressRanges`: IPv4 address range you want to allow access.
 - `allowdIPv6AddressRanges`: IPv6 address range you want to allow access.
 - (Removing both items above will deploy without IP address restrictions)
+- `lambdaArchitecture`: Architecture of the Lambda functions and layer, `arm64` or `x86_64` (default: `arm64`).
 
 Example
 ```
@@ -99,3 +100,5 @@ Then, an account will be created and the application will be displayed.
 
 - [REST API specification](docs/api.ja.md)
 - [Step Functions state machine definition](docs/stepfunctions.md)
+- [Local development](docs/development.md)
+- [About GitHub Actions](docs/github.md)

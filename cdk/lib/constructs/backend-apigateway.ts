@@ -19,11 +19,14 @@ export interface ApiGatewayProps {
   /** ユーザー認証に使う Cognito ユーザープール */
   userPool: cognito.IUserPool;
 
+  /** Lambda 関数のアーキテクチャ。Lambda 関数が利用する Lambda レイヤーのアーキテクチャと合わせる */
+  architecture: lambda.Architecture;
+
   /** Lambda 関数が利用する Lambda レイヤー */
   layer: lambda.ILayerVersion;
 
-  /** CORS の Allow-Origin */
-  allowOrigin: string;
+  /** CORS で許可する Origin の一覧 (先頭がリクエストの Origin が一覧に無い場合の既定値) */
+  allowOrigins: string[];
 }
 
 /**
@@ -33,11 +36,14 @@ export class ApiGateway extends Construct {
   /** API Gateway REST API */
   readonly restApi: apigw.RestApi;
 
+  /** Lambda 関数のアーキテクチャ */
+  readonly architecture: lambda.Architecture;
+
   /** Lambda 関数が利用する Lambda レイヤー */
   readonly layer: lambda.ILayerVersion;
 
-  /** CORS の Allow-Origin */
-  readonly allowOrigin: string;
+  /** CORS で許可する Origin の一覧 */
+  readonly allowOrigins: string[];
 
   /**
    * {@link ApiGateway} コンストラクトを作成する
@@ -48,8 +54,9 @@ export class ApiGateway extends Construct {
   constructor(scope: Construct, id: string, props: ApiGatewayProps) {
     super(scope, id);
 
+    this.architecture = props.architecture;
     this.layer = props.layer;
-    this.allowOrigin = props.allowOrigin;
+    this.allowOrigins = props.allowOrigins;
 
     // API Gateway へのアクセスログを記録する CloudWatch Logs ロググループを作成する
     const apiLogGroup = new logs.LogGroup(this, 'RestApiLogGroup', {
@@ -80,7 +87,7 @@ export class ApiGateway extends Construct {
       cloudWatchRole: true, // CloudWatch Logs にログを出力するための IAM ロールを自動作成する
 
       defaultCorsPreflightOptions: {
-        allowOrigins: [this.allowOrigin], // REST API への接続元 Origin に特別な制限を設けない (テスト用の設定)
+        allowOrigins: this.allowOrigins, // REST API への接続を許可する Origin
       },
 
       // REST API のデフォルト認証方法を Cognito 認証とする
@@ -103,8 +110,8 @@ export class ApiGateway extends Construct {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowsApi'),
       // 利用するランタイムとして Python 3.14 を指定
       runtime: lambda.Runtime.PYTHON_3_14,
-      // 利用するアーキテクチャとして x64_64 を指定
-      architecture: lambda.Architecture.X86_64,
+      // 利用するアーキテクチャを指定
+      architecture: this.architecture,
 
       // 利用可能なメモリサイズをデフォルトの 128MB から変更したい場合に指定
       // memorySize: 1024,
@@ -114,7 +121,7 @@ export class ApiGateway extends Construct {
 
       // Lambda 関数が必要とする環境変数の設定
       environment: {
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       // Lambda 関数が利用するレイヤーの設定
@@ -154,14 +161,14 @@ export class ApiGateway extends Construct {
     const workflowVisualizersApiFunction = new lambdaPython.PythonFunction(this, 'WorkflowVisualizersApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/WorkflowVisualizersApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
         DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: dynamoDb.workflowVisualizersTable.tableName,
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -192,7 +199,7 @@ export class ApiGateway extends Construct {
     const startAnalysisApiFunction = new lambdaPython.PythonFunction(this, 'StartAnalysisApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/StartAnalysisApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
@@ -203,7 +210,7 @@ export class ApiGateway extends Construct {
         STEPFUNCTIONS_STATE_MACHINE_ARN: workflowRunner.stateMachine.stateMachineArn,
         DYNAMODB_TABLE_NAME_WORKFLOW_VISUALIZERS: dynamoDb.workflowVisualizersTable.tableName,
         STAGE_NAME: cdk.Stage.of(this)?.stageName ?? '',
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -236,13 +243,13 @@ export class ApiGateway extends Construct {
     const runsApiFunction = new lambdaPython.PythonFunction(this, 'RunsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunsApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -277,13 +284,13 @@ export class ApiGateway extends Construct {
     const runTasksApiFunction = new lambdaPython.PythonFunction(this, 'RunTasksApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunTasksApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -318,13 +325,13 @@ export class ApiGateway extends Construct {
     const taskLogApiFunction = new lambdaPython.PythonFunction(this, 'TaskLogApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/TaskLogApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -363,13 +370,13 @@ export class ApiGateway extends Construct {
     const runOutputsApiFunction = new lambdaPython.PythonFunction(this, 'RunOutputsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunOutputsApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -406,13 +413,13 @@ export class ApiGateway extends Construct {
     const deleteRunApiFunction = new lambdaPython.PythonFunction(this, 'DeleteRunApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/DeleteRunApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -444,14 +451,14 @@ export class ApiGateway extends Construct {
     const runVisualizationsApiFunction = new lambdaPython.PythonFunction(this, 'RunVisualizationsApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/RunVisualizationsApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
 
       environment: {
         DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS: dynamoDb.runVisualizationsTable.tableName,
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],
@@ -483,7 +490,7 @@ export class ApiGateway extends Construct {
     const visualizationDashboardApiFunction = new lambdaPython.PythonFunction(this, 'VisualizationDashboardApiFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/ApiGateway/VisualizationDashboardApi'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: this.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
@@ -493,7 +500,7 @@ export class ApiGateway extends Construct {
         QUICKSIGHT_USER_NAMESPACE: quickSightUserNamespace,
         QUICKSIGHT_FEDERATION_ROLE_NAME: cognito.quickSightFederationRole!.roleName,
         DYNAMODB_TABLE_NAME_RUN_VISUALIZATIONS: dynamoDb.runVisualizationsTable.tableName,
-        CORS_ALLOW_ORIGIN: this.allowOrigin,
+        CORS_ALLOW_ORIGINS: this.allowOrigins.join(','),
       },
 
       layers: [this.layer],

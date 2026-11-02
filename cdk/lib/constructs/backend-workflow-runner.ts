@@ -10,6 +10,8 @@ import * as path from 'path';
 
 /** {@link WorkflowRunner} コンストラクトのパラメーター */
 export interface WorkflowRunnerProps {
+  /** Lambda 関数のアーキテクチャ。Lambda 関数が利用する Lambda レイヤーのアーキテクチャと合わせる */
+  architecture: lambda.Architecture;
   /** Lambda 関数が共通で利用する Lambda レイヤー */
   commonLayer: lambda.ILayerVersion;
 }
@@ -34,7 +36,7 @@ export class WorkflowRunner extends Construct {
     const omicsStartRunTaskFunction = new lambdaPython.PythonFunction(this, 'OmicsStartRunTaskFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/StepFunctions/StartRunTask'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: props.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
@@ -92,7 +94,7 @@ export class WorkflowRunner extends Construct {
     const omicsGetRunStatusTaskFunction = new lambdaPython.PythonFunction(this, 'OmicsGetRunStatusTaskFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/StepFunctions/GetRunStatusTask'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: props.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),
@@ -124,7 +126,7 @@ export class WorkflowRunner extends Construct {
     const notificationTaskFunction = new lambdaPython.PythonFunction(this, 'NotificationTaskFunction', {
       entry: path.resolve(__dirname, '../../../backend/lambda/functions/StepFunctions/NotificationTask'),
       runtime: lambda.Runtime.PYTHON_3_14,
-      architecture: lambda.Architecture.X86_64,
+      architecture: props.architecture,
 
       // memorySize: 1024,
       // ephemeralStorageSize: cdk.Size.gibibytes(1),

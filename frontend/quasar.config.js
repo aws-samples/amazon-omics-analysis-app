@@ -103,6 +103,10 @@ module.exports = configure(function (/* ctx */) {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer: {
       // https: true
+      // 開発サーバーには自分のマシンからのみ接続できるようにする
+      host: 'localhost',
+      // dev ステージのバックエンドが CORS で許可する Origin (http://localhost:9000) と合わせる
+      port: 9000,
       open: true, // opens browser window automatically
     },
 

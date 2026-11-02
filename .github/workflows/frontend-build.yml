@@ -1,0 +1,81 @@
+name: Frontend Build
+
+# Checks that the frontend can be built in the same environment as CodeBuild uses during deployment.
+#
+# During deployment, the frontend is built by NodejsBuild in cdk/lib/omics-analysis-app-stack.ts in the following environment:
+# - Image: aws/codebuild/standard:7.0 (for nodejsVersion: 24)
+#   Based on Ubuntu 22.04 (x86_64). See the following Dockerfile for the Node.js and npm versions:
+#   https://github.com/aws/aws-codebuild-docker-images/blob/master/ubuntu/standard/7.0/Dockerfile
+# - Compute type: SMALL (3 GB memory, 2 vCPUs)
+# - Input: the frontend directory excluding dist and node_modules
+# - Commands: npm ci && npm run build (output to dist/spa)
+# When the NodejsBuild settings or the CodeBuild image change, update this workflow as well.
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-build.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-build.yml"
+
+permissions:
+  contents: read
+
+env:
+  # NODE_24_VERSION and the installed npm version of aws/codebuild/standard:7.0
+  NODE_VERSION: "24.22.1"
+  NPM_VERSION: "11.21.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Run on the same OS as the base of the CodeBuild image, limited to the same resources as compute type SMALL
+    container:
+      image: public.ecr.aws/ubuntu/ubuntu:22.04
+      options: --memory=3g --cpus=2
+    steps:
+      # Install basic tools that are included in the CodeBuild image but not in the plain Ubuntu image
+      - name: Install base tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git xz-utils
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install npm
+        run: npm install -g "npm@${NPM_VERSION}"
+
+      - name: Show versions
+        run: |
+          cat /etc/os-release | grep PRETTY_NAME
+          node --version
+          npm --version
+
+      # Environment variables set by buildEnvironment of NodejsBuild
+      # (the values are only embedded in the build output, so dummy values are used)
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://example.com/v1/
+          VITE_AUTH_REGION: us-east-1
+          VITE_AUTH_USER_POOL_ID: us-east-1_example
+          VITE_AUTH_WEB_CLIENT_ID: example
+        run: |
+          npm ci
+          npm run build
+
+      # Check that the build output is in outputSourceDirectory (dist/spa) of NodejsBuild
+      - name: Check build output
+        working-directory: frontend
+        run: test -f dist/spa/index.html
